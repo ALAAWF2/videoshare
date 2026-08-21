@@ -10,8 +10,8 @@ android {
         applicationId "com.orange.videoplayer"
         minSdk 22
         targetSdk 34
-        versionCode 19
-        versionName "2.8"
+        versionCode 20
+        versionName "2.9"
     }
 
     signingConfigs {

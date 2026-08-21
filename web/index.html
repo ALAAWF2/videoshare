@@ -6,7 +6,7 @@
     <title>MyPlyr - المشاهدة الجماعية (Watch Party)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root {
@@ -23,7 +23,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Tajawal', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -37,7 +37,6 @@
             overflow: hidden;
         }
 
-        /* Header */
         header {
             background: rgba(20, 27, 45, 0.95);
             backdrop-filter: blur(12px);
@@ -75,7 +74,6 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: 700;
-            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -95,7 +93,6 @@
             50% { opacity: 0.5; transform: scale(0.85); }
         }
 
-        /* Player Container */
         .player-wrap {
             position: relative;
             flex: 1;
@@ -113,7 +110,6 @@
             background: #000;
         }
 
-        /* Floating Sync Overlay Badge */
         .sync-badge {
             position: absolute;
             top: 14px;
@@ -130,14 +126,85 @@
             gap: 6px;
             pointer-events: none;
             z-index: 5;
-            transition: all 0.3s;
+        }
+
+        /* Mixed Content Alert Card */
+        .mixed-content-banner {
+            position: absolute;
+            inset: 0;
+            background: rgba(9, 13, 22, 0.95);
+            backdrop-filter: blur(16px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+            z-index: 15;
+        }
+
+        .banner-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(229, 9, 20, 0.4);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 440px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        .banner-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .banner-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #FFF;
+        }
+
+        .banner-desc {
+            font-size: 14px;
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: #FFF;
+            text-decoration: none;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: #21262D;
+            color: var(--text);
+            border: 1px solid var(--border);
         }
 
         /* Flying Emojis */
         .flying-emoji {
             position: absolute;
             bottom: 70px;
-            font-size: 38px;
+            font-size: 40px;
             animation: flyUp 2.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
             pointer-events: none;
             z-index: 20;
@@ -186,85 +253,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.15s, background-color 0.15s;
+            transition: transform 0.15s;
             outline: none;
-        }
-
-        .emoji-btn:hover {
-            background: #212B45;
-            transform: scale(1.15);
         }
 
         .emoji-btn:active {
             transform: scale(1.35);
-        }
-
-        /* Center Join Overlay if no params */
-        .join-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(9, 13, 22, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 30;
-            padding: 20px;
-        }
-
-        .join-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .join-card h2 {
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .join-card p {
-            color: var(--text-dim);
-            font-size: 14px;
-            margin-bottom: 18px;
-        }
-
-        .input-box {
-            width: 100%;
-            padding: 12px 16px;
-            background: #090D16;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: #FFF;
-            font-size: 15px;
-            margin-bottom: 12px;
-            outline: none;
-            text-align: center;
-        }
-
-        .input-box:focus {
-            border-color: var(--accent);
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: var(--accent);
-            color: #FFF;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .btn-submit:hover {
-            opacity: 0.9;
         }
     </style>
 </head>
@@ -272,7 +266,7 @@
 
     <!-- Header -->
     <header>
-        <div class="brand-title" id="titleDisplay">
+        <div class="brand-title">
             <span>🍿</span> <div id="videoTitleText">MyPlyr Watch Party</div>
         </div>
         <div class="room-badge">
@@ -284,9 +278,26 @@
     <!-- Player Area -->
     <div class="player-wrap" id="playerWrap">
         <div class="sync-badge" id="syncStatus">
-            <span>🟢</span> <span id="syncText">جاري الاتصال بالسيرفر...</span>
+            <span id="syncIcon">🟢</span> <span id="syncText">جاري الاتصال بالسيرفر...</span>
         </div>
         <video id="videoPlayer" controls playsinline webkit-playsinline></video>
+
+        <!-- Mixed Content Helper Overlay -->
+        <div class="mixed-content-banner" id="mixedContentBanner" style="display: none;">
+            <div class="banner-card">
+                <div class="banner-icon">🎬</div>
+                <div class="banner-title">تشغيل الفيديو في Safari</div>
+                <div class="banner-desc">
+                    سيرفر الفيديو يعمل ببروتوكول HTTP. لتشغيله بأعلى سرعة وبدون قيود المتصفح:
+                </div>
+                <a id="btnDirectPlay" class="btn-action" href="#" target="_blank">
+                    ▶️ فتح الفيديو في مشغل Safari الأصلي
+                </a>
+                <button class="btn-action btn-secondary" onclick="tryProxyStream()">
+                    🔄 محاولة التشغيل داخل الصفحة عبر البروكسي
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Live Reaction Bar -->
@@ -299,22 +310,10 @@
         <button class="emoji-btn" onclick="sendReaction('😱')">😱</button>
     </div>
 
-    <!-- Manual Join Modal if params missing -->
-    <div class="join-overlay" id="joinOverlay" style="display: none;">
-        <div class="join-card">
-            <h2>🍿 المشاهدة الجماعية</h2>
-            <p>أدخل رمز الغرفة ورابط الفيديو للانضمام والمشاهدة المتزامنة</p>
-            <input type="text" id="inputRoom" class="input-box" placeholder="رمز الغرفة (مثال: WP-1234)">
-            <input type="text" id="inputUrl" class="input-box" placeholder="رابط الفيديو (http://...)">
-            <button class="btn-submit" onclick="joinManually()">انضمام الآن</button>
-        </div>
-    </div>
-
     <script>
-        // Parse Query Params
         const params = new URLSearchParams(window.location.search);
-        let room = params.get('room') || '';
-        let videoSrc = params.get('src') || '';
+        let room = (params.get('room') || 'WP-1001').trim();
+        let videoSrc = (params.get('src') || '').trim();
         let videoTitle = params.get('title') || 'مشاهدة جماعية';
 
         const video = document.getElementById('videoPlayer');
@@ -323,69 +322,76 @@
         const videoTitleText = document.getElementById('videoTitleText');
         const syncText = document.getElementById('syncText');
         const statusDot = document.getElementById('statusDot');
-        const joinOverlay = document.getElementById('joinOverlay');
+        const mixedBanner = document.getElementById('mixedContentBanner');
+        const btnDirectPlay = document.getElementById('btnDirectPlay');
 
-        if (!room || !videoSrc) {
-            joinOverlay.style.display = 'flex';
-        } else {
-            initPlayerAndSync();
-        }
+        roomCodeText.innerText = room;
+        videoTitleText.innerText = decodeURIComponent(videoTitle);
+        btnDirectPlay.href = videoSrc;
 
-        function joinManually() {
-            const inRoom = document.getElementById('inputRoom').value.trim();
-            const inUrl = document.getElementById('inputUrl').value.trim();
-            if (!inRoom || !inUrl) {
-                alert('يرجى إدخال رمز الغرفة ورابط الفيديو');
-                return;
-            }
-            room = inRoom;
-            videoSrc = inUrl;
-            joinOverlay.style.display = 'none';
-            initPlayerAndSync();
-        }
+        // Check for HTTP on HTTPS page
+        const isMixed = (window.location.protocol === 'https:' && videoSrc.startsWith('http://'));
 
-        function initPlayerAndSync() {
-            roomCodeText.innerText = room;
-            videoTitleText.innerText = decodeURIComponent(videoTitle);
-
-            // Load Video via HLS.js or Native Video
-            if (Hls.isSupported() && (videoSrc.includes('.m3u8') || videoSrc.includes('ts'))) {
+        function loadVideo(sourceUrl) {
+            if (Hls.isSupported() && (sourceUrl.includes('.m3u8') || sourceUrl.includes('ts'))) {
                 const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-                hls.loadSource(videoSrc);
+                hls.loadSource(sourceUrl);
                 hls.attachMedia(video);
+                hls.on(Hls.Events.ERROR, (e, data) => {
+                    if (data.fatal && isMixed) {
+                        mixedBanner.style.display = 'flex';
+                    }
+                });
             } else {
-                video.src = videoSrc;
+                video.src = sourceUrl;
+                video.onerror = () => {
+                    if (isMixed) {
+                        mixedBanner.style.display = 'flex';
+                    }
+                };
             }
-
-            connectWebSocket();
         }
 
+        function tryProxyStream() {
+            mixedBanner.style.display = 'none';
+            const proxiedUrl = 'https://corsproxy.io/?' + encodeURIComponent(videoSrc);
+            loadVideo(proxiedUrl);
+            video.play().catch(() => {});
+        }
+
+        if (videoSrc) {
+            loadVideo(videoSrc);
+        }
+
+        // Realtime Signaling via ntfy.sh
+        const topic = 'myplyr-party-' + room.toLowerCase();
         let ws = null;
-        let isSyncingFromHost = false;
 
         function connectWebSocket() {
-            const wsUrl = 'wss://socketsbay.com/wss/v2/1/' + room;
+            const wsUrl = 'wss://ntfy.sh/' + topic + '/ws';
             try {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
                     syncText.innerText = 'متصل ومتزامن مع المضيف ✓';
                     statusDot.style.background = '#3FB950';
-                    // Announce Join
-                    ws.send(JSON.stringify({ action: 'join', sender: 'Safari (iOS)' }));
+                    publish({ action: 'join', sender: 'Safari (iOS)' });
                 };
 
                 ws.onmessage = (event) => {
                     try {
-                        const data = JSON.parse(event.data);
-                        handleSocketMessage(data);
+                        const envelope = JSON.parse(event.data);
+                        if (envelope.event === 'message' && envelope.message) {
+                            const data = JSON.parse(envelope.message);
+                            handleSocketMessage(data);
+                        }
                     } catch (e) {}
                 };
 
                 ws.onclose = () => {
-                    syncText.innerText = 'انقطع الاتصال، جاري إعادة المحاولة...';
+                    syncText.innerText = 'جاري إعادة الاتصال...';
                     statusDot.style.background = '#E50914';
-                    setTimeout(connectWebSocket, 2500);
+                    setTimeout(connectWebSocket, 2000);
                 };
 
                 ws.onerror = () => {
@@ -396,15 +402,20 @@
             }
         }
 
+        function publish(data) {
+            fetch('https://ntfy.sh/' + topic, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+                body: JSON.stringify(data)
+            }).catch(() => {});
+        }
+
         function handleSocketMessage(data) {
             if (data.action === 'sync') {
                 const targetPosSec = (data.pos || 0) / 1000.0;
                 const isPlaying = (data.state === 'PLAYING');
 
-                isSyncingFromHost = true;
-                
-                // Adjust position if difference is more than 1.2 seconds
-                if (Math.abs(video.currentTime - targetPosSec) > 1.2) {
+                if (Math.abs(video.currentTime - targetPosSec) > 1.5) {
                     video.currentTime = targetPosSec;
                 }
 
@@ -414,8 +425,6 @@
                     video.pause();
                 }
 
-                setTimeout(() => { isSyncingFromHost = false; }, 300);
-
             } else if (data.action === 'emoji') {
                 spawnFloatingEmoji(data.emoji || '🔥');
             }
@@ -423,13 +432,11 @@
 
         function sendReaction(emoji) {
             spawnFloatingEmoji(emoji);
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    action: 'emoji',
-                    emoji: emoji,
-                    sender: 'Safari'
-                }));
-            }
+            publish({
+                action: 'emoji',
+                emoji: emoji,
+                sender: 'Safari'
+            });
         }
 
         function spawnFloatingEmoji(emoji) {
@@ -440,6 +447,8 @@
             playerWrap.appendChild(el);
             setTimeout(() => el.remove(), 2400);
         }
+
+        connectWebSocket();
     </script>
 </body>
 </html>

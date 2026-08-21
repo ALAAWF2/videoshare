@@ -6,12 +6,17 @@ import android.os.Looper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
@@ -94,11 +99,16 @@ public class WatchPartyManager {
         connectWebSocket();
     }
 
+    private String getTopic() {
+        if (roomId == null) return "myplyr-party-default";
+        return "myplyr-party-" + roomId.toLowerCase(Locale.US);
+    }
+
     private void connectWebSocket() {
         disconnect();
 
-        // High performance public WebSocket relay
-        String wsUrl = "wss://socketsbay.com/wss/v2/1/" + roomId;
+        // High-reliability global pub/sub relay
+        String wsUrl = "wss://ntfy.sh/" + getTopic() + "/ws";
         Request request = new Request.Builder()
                 .url(wsUrl)
                 .build();
@@ -109,20 +119,28 @@ public class WatchPartyManager {
                 mainHandler.post(() -> {
                     if (listener != null) listener.onConnectionStatus(true);
                 });
-                // Broadcast join announcement
+                // Announce Join
                 try {
                     JSONObject joinMsg = new JSONObject();
                     joinMsg.put("action", "join");
                     joinMsg.put("sender", isHost ? "المضيف (Host)" : "ضيف (Guest)");
                     joinMsg.put("ts", System.currentTimeMillis());
-                    ws.send(joinMsg.toString());
+                    publishMessage(joinMsg.toString());
                 } catch (JSONException ignored) {
                 }
             }
 
             @Override
             public void onMessage(WebSocket ws, String text) {
-                handleIncomingMessage(text);
+                try {
+                    JSONObject envelope = new JSONObject(text);
+                    if ("message".equals(envelope.optString("event"))) {
+                        String payload = envelope.optString("message");
+                        handleIncomingMessage(payload);
+                    }
+                } catch (JSONException e) {
+                    handleIncomingMessage(text);
+                }
             }
 
             @Override
@@ -137,6 +155,26 @@ public class WatchPartyManager {
                 mainHandler.post(() -> {
                     if (listener != null) listener.onConnectionStatus(false);
                 });
+            }
+        });
+    }
+
+    private void publishMessage(String payload) {
+        if (roomId == null || roomId.isEmpty()) return;
+        RequestBody body = RequestBody.create(payload, MediaType.parse("text/plain; charset=utf-8"));
+        Request req = new Request.Builder()
+                .url("https://ntfy.sh/" + getTopic())
+                .post(body)
+                .build();
+
+        client.newCall(req).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) {
+                response.close();
             }
         });
     }
@@ -184,7 +222,7 @@ public class WatchPartyManager {
     }
 
     public void broadcastSync(long posMs, boolean isPlaying) {
-        if (webSocket == null || !isPartyActive()) return;
+        if (!isPartyActive()) return;
 
         try {
             JSONObject obj = new JSONObject();
@@ -193,13 +231,13 @@ public class WatchPartyManager {
             obj.put("pos", posMs);
             obj.put("sender", isHost ? "المضيف" : "ضيف");
             obj.put("ts", System.currentTimeMillis());
-            webSocket.send(obj.toString());
+            publishMessage(obj.toString());
         } catch (JSONException ignored) {
         }
     }
 
     public void sendEmoji(String emoji) {
-        if (webSocket == null || !isPartyActive()) return;
+        if (!isPartyActive()) return;
 
         try {
             JSONObject obj = new JSONObject();
@@ -207,13 +245,13 @@ public class WatchPartyManager {
             obj.put("emoji", emoji);
             obj.put("sender", isHost ? "المضيف" : "ضيف");
             obj.put("ts", System.currentTimeMillis());
-            webSocket.send(obj.toString());
+            publishMessage(obj.toString());
         } catch (JSONException ignored) {
         }
     }
 
     public void sendChat(String message) {
-        if (webSocket == null || !isPartyActive() || message == null || message.trim().isEmpty()) return;
+        if (!isPartyActive() || message == null || message.trim().isEmpty()) return;
 
         try {
             JSONObject obj = new JSONObject();
@@ -221,7 +259,7 @@ public class WatchPartyManager {
             obj.put("message", message.trim());
             obj.put("sender", isHost ? "المضيف" : "أنا");
             obj.put("ts", System.currentTimeMillis());
-            webSocket.send(obj.toString());
+            publishMessage(obj.toString());
         } catch (JSONException ignored) {
         }
     }

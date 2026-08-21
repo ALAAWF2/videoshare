@@ -73,9 +73,13 @@ public class WatchPartyWebPlayer {
             );
 
             String shareSubject = "مشغل المشاهدة الجماعية - " + (videoTitle != null ? videoTitle : "MyPlyr");
-            String shareBody = "🍿 أرسلت لك مشغل المشاهدة الجماعية (MyPlyr-WatchParty.html)\n" +
+            String shareBody = "🍿 دعوة للمشاهدة الجماعية على MyPlyr\n" +
+                    (videoTitle != null && !videoTitle.isEmpty() ? "🎬 " + videoTitle + "\n" : "") +
                     "🔑 رمز الغرفة: " + roomId + "\n\n" +
-                    "📱 افتح هذا الملف في Safari على الآيفون أو في أي متصفح بالكمبيوتر لتبدأ المشاهدة المتزامنة فوراً بدون قيود!";
+                    "📱 طريقة التشغيل على الآيفون في ثانيتين:\n" +
+                    "1️⃣ افتح الملف المرفق واضغط زر المشاركة (📤) بالأعلى.\n" +
+                    "2️⃣ اختر متصفح Safari.\n" +
+                    "3️⃣ اضغط زر التشغيل للبدء بالمشاهدة المتزامنة فوراً! 🍿🎬";
 
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("text/html");

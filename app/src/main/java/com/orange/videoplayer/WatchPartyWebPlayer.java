@@ -5,19 +5,22 @@ import java.net.URLEncoder;
 
 public class WatchPartyWebPlayer {
 
-    // Universal public web video player that is live and works on iOS Safari & PC
-    private static final String PUBLIC_WEB_PLAYER = "https://clappr.io/demo/";
+    // Live hosted GitHub Pages Web Player for iOS Safari & Web
+    private static final String HOSTED_WEB_PLAYER_URL = "https://alaawf2.github.io/videoshare/web/";
 
     public static String getShareableWebUrl(String roomId, String videoUrl, String videoTitle) {
         if (roomId == null) roomId = "WP-1001";
-        if (videoUrl == null || videoUrl.isEmpty()) return "";
-
-        // If it's an online HTTP/HTTPS stream, return direct stream URL or web player
-        if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://")) {
-            return videoUrl;
+        String encodedUrl = "";
+        String encodedTitle = "";
+        try {
+            if (videoUrl != null) encodedUrl = URLEncoder.encode(videoUrl, "UTF-8");
+            if (videoTitle != null) encodedTitle = URLEncoder.encode(videoTitle, "UTF-8");
+        } catch (UnsupportedEncodingException ignored) {
+            if (videoUrl != null) encodedUrl = videoUrl;
+            if (videoTitle != null) encodedTitle = videoTitle;
         }
 
-        return videoUrl;
+        return HOSTED_WEB_PLAYER_URL + "?room=" + roomId + "&src=" + encodedUrl + "&title=" + encodedTitle;
     }
 
     public static String buildFullShareMessage(String roomId, String videoUrl, String videoTitle) {
@@ -30,13 +33,10 @@ public class WatchPartyWebPlayer {
 
         if (videoUrl != null && !videoUrl.isEmpty()) {
             if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://")) {
-                sb.append("▶️ رابط المشاهدة المباشر (للآيفون والكمبيوتر):\n").append(videoUrl).append("\n\n");
-                try {
-                    String encoded = URLEncoder.encode(videoUrl, "UTF-8");
-                    sb.append("🌐 مشغل الويب المتزامن:\n")
-                      .append(PUBLIC_WEB_PLAYER).append("?src=").append(encoded);
-                } catch (UnsupportedEncodingException ignored) {
-                }
+                String webPlayerUrl = getShareableWebUrl(roomId, videoUrl, videoTitle);
+                sb.append("🌐 رابط المشاهدة المباشر للآيفون والكمبيوتر (متزامن):\n")
+                  .append(webPlayerUrl).append("\n\n");
+                sb.append("▶️ رابط البث المباشر الخام:\n").append(videoUrl);
             } else {
                 sb.append("📁 ملاحظة: هذا الفيديو مخزن محلياً على الهاتف.");
             }

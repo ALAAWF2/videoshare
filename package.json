@@ -1,0 +1,12 @@
+{
+  "name": "myplyr-videoshare",
+  "version": "1.0.0",
+  "description": "MyPlyr Watch Party Realtime Sync & Stream Proxy",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["iptv", "watchparty", "streaming"],
+  "author": "ALAAWF2",
+  "license": "MIT"
+}

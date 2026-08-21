@@ -128,78 +128,6 @@
             z-index: 5;
         }
 
-        /* Mixed Content Alert Card */
-        .mixed-content-banner {
-            position: absolute;
-            inset: 0;
-            background: rgba(9, 13, 22, 0.95);
-            backdrop-filter: blur(16px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            text-align: center;
-            z-index: 15;
-        }
-
-        .banner-card {
-            background: var(--card-bg);
-            border: 1px solid rgba(229, 9, 20, 0.4);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 440px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-        }
-
-        .banner-icon {
-            font-size: 40px;
-            margin-bottom: 12px;
-        }
-
-        .banner-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #FFF;
-        }
-
-        .banner-desc {
-            font-size: 14px;
-            color: var(--text-dim);
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .btn-action {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 14px;
-            background: var(--accent);
-            color: #FFF;
-            text-decoration: none;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            margin-bottom: 10px;
-        }
-
-        .btn-action:hover {
-            opacity: 0.9;
-        }
-
-        .btn-secondary {
-            background: #21262D;
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
         /* Flying Emojis */
         .flying-emoji {
             position: absolute;
@@ -281,23 +209,6 @@
             <span id="syncIcon">🟢</span> <span id="syncText">جاري الاتصال بالسيرفر...</span>
         </div>
         <video id="videoPlayer" controls playsinline webkit-playsinline></video>
-
-        <!-- Mixed Content Helper Overlay -->
-        <div class="mixed-content-banner" id="mixedContentBanner" style="display: none;">
-            <div class="banner-card">
-                <div class="banner-icon">🎬</div>
-                <div class="banner-title">تشغيل الفيديو في Safari</div>
-                <div class="banner-desc">
-                    سيرفر الفيديو يعمل ببروتوكول HTTP. لتشغيله بأعلى سرعة وبدون قيود المتصفح:
-                </div>
-                <a id="btnDirectPlay" class="btn-action" href="#" target="_blank">
-                    ▶️ فتح الفيديو في مشغل Safari الأصلي
-                </a>
-                <button class="btn-action btn-secondary" onclick="tryProxyStream()">
-                    🔄 محاولة التشغيل داخل الصفحة عبر البروكسي
-                </button>
-            </div>
-        </div>
     </div>
 
     <!-- Live Reaction Bar -->
@@ -322,41 +233,32 @@
         const videoTitleText = document.getElementById('videoTitleText');
         const syncText = document.getElementById('syncText');
         const statusDot = document.getElementById('statusDot');
-        const mixedBanner = document.getElementById('mixedContentBanner');
-        const btnDirectPlay = document.getElementById('btnDirectPlay');
 
         roomCodeText.innerText = room;
         videoTitleText.innerText = decodeURIComponent(videoTitle);
-        btnDirectPlay.href = videoSrc;
 
-        // Check for HTTP on HTTPS page
-        const isMixed = (window.location.protocol === 'https:' && videoSrc.startsWith('http://'));
+        // Auto proxy HTTP streams through HTTPS Cloudflare Worker to avoid Mixed Content
+        const PROXY_BASE = 'https://videoproxy.wafaiealaa.workers.dev/?url=';
 
-        function loadVideo(sourceUrl) {
-            if (Hls.isSupported() && (sourceUrl.includes('.m3u8') || sourceUrl.includes('ts'))) {
-                const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-                hls.loadSource(sourceUrl);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.ERROR, (e, data) => {
-                    if (data.fatal && isMixed) {
-                        mixedBanner.style.display = 'flex';
-                    }
-                });
-            } else {
-                video.src = sourceUrl;
-                video.onerror = () => {
-                    if (isMixed) {
-                        mixedBanner.style.display = 'flex';
-                    }
-                };
+        function getPlayableUrl(rawUrl) {
+            if (!rawUrl) return '';
+            if (rawUrl.startsWith('http://')) {
+                return PROXY_BASE + encodeURIComponent(rawUrl);
             }
+            return rawUrl;
         }
 
-        function tryProxyStream() {
-            mixedBanner.style.display = 'none';
-            const proxiedUrl = 'https://corsproxy.io/?' + encodeURIComponent(videoSrc);
-            loadVideo(proxiedUrl);
-            video.play().catch(() => {});
+        function loadVideo(sourceUrl) {
+            const finalUrl = getPlayableUrl(sourceUrl);
+            if (!finalUrl) return;
+
+            if (Hls.isSupported() && (sourceUrl.includes('.m3u8') || sourceUrl.includes('ts'))) {
+                const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+                hls.loadSource(finalUrl);
+                hls.attachMedia(video);
+            } else {
+                video.src = finalUrl;
+            }
         }
 
         if (videoSrc) {

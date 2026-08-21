@@ -17,7 +17,6 @@
             --text: #FFFFFF;
             --text-dim: #8B949E;
             --border: #21262D;
-            --green: #2EA043;
         }
 
         * {
@@ -149,6 +148,52 @@
             z-index: 5;
         }
 
+        /* iOS Safari Tap-to-Play Overlay */
+        .tap-play-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(9, 13, 22, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 25;
+            cursor: pointer;
+        }
+
+        .tap-play-circle {
+            width: 84px;
+            height: 84px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: #FFF;
+            box-shadow: 0 0 30px var(--accent-glow);
+            animation: pulsePlay 1.8s infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes pulsePlay {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .tap-play-text {
+            font-size: 17px;
+            font-weight: 700;
+            color: #FFF;
+        }
+
+        .tap-play-sub {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
         /* Flying Emojis */
         .flying-emoji {
             position: absolute;
@@ -161,21 +206,10 @@
         }
 
         @keyframes flyUp {
-            0% {
-                opacity: 0;
-                transform: translateY(20px) scale(0.6);
-            }
-            15% {
-                opacity: 1;
-                transform: translateY(0) scale(1.2);
-            }
-            80% {
-                opacity: 0.9;
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-340px) scale(1.6);
-            }
+            0% { opacity: 0; transform: translateY(20px) scale(0.6); }
+            15% { opacity: 1; transform: translateY(0) scale(1.2); }
+            80% { opacity: 0.9; }
+            100% { opacity: 0; transform: translateY(-340px) scale(1.6); }
         }
 
         /* Reactions Bar */
@@ -274,7 +308,6 @@
             color: #FFF;
             font-size: 14px;
             outline: none;
-            transition: border-color 0.2s;
             text-align: center;
         }
 
@@ -322,7 +355,15 @@
         <div class="sync-badge" id="syncStatus">
             <span id="syncIcon">🟢</span> <span id="syncText">جاهز ومتزامن ✓</span>
         </div>
-        <video id="videoPlayer" controls playsinline webkit-playsinline></video>
+
+        <video id="videoPlayer" playsinline webkit-playsinline x5-playsinline preload="auto" controls></video>
+
+        <!-- Tap to Play Overlay for iOS Safari -->
+        <div class="tap-play-overlay" id="tapPlayOverlay" onclick="userUnlockAndPlay()">
+            <div class="tap-play-circle">▶</div>
+            <div class="tap-play-text">انقر لبدء المشاهدة والمزامنة</div>
+            <div class="tap-play-sub">اضغط في أي مكان لتشغيل الفيديو فوراً على الآيفون</div>
+        </div>
     </div>
 
     <!-- Live Reaction Bar -->
@@ -361,7 +402,7 @@
         const params = new URLSearchParams(window.location.search);
         let room = (params.get('room') || localStorage.getItem('last_room') || '').trim();
         let videoSrc = (params.get('src') || localStorage.getItem('last_src') || '').trim();
-        let videoTitle = params.get('title') || 'مشاهدة جماعية';
+        let videoTitle = params.get('title') || 'مشاهدة متزامنة';
 
         const video = document.getElementById('videoPlayer');
         const playerWrap = document.getElementById('playerWrap');
@@ -370,13 +411,14 @@
         const syncText = document.getElementById('syncText');
         const statusDot = document.getElementById('statusDot');
         const joinOverlay = document.getElementById('joinOverlay');
+        const tapPlayOverlay = document.getElementById('tapPlayOverlay');
         const inputRoom = document.getElementById('inputRoom');
         const inputUrl = document.getElementById('inputUrl');
 
         if (!room || !videoSrc) {
             openJoinModal();
         } else {
-            startParty(room, videoSrc, videoTitle);
+            prepareParty(room, videoSrc, videoTitle);
         }
 
         function openJoinModal() {
@@ -400,36 +442,61 @@
             localStorage.setItem('last_src', videoSrc);
 
             joinOverlay.style.display = 'none';
-            startParty(room, videoSrc, 'مشاهدة متزامنة');
+            prepareParty(room, videoSrc, 'مشاهدة متزامنة');
         }
 
         let hlsInstance = null;
         let ws = null;
-        let isSyncing = false;
 
-        function startParty(r, src, title) {
+        function prepareParty(r, src, title) {
             roomCodeText.innerText = r;
             videoTitleText.innerText = decodeURIComponent(title);
 
-            // 1. Load Video directly
+            // Clean previous instance
             if (hlsInstance) {
                 hlsInstance.destroy();
                 hlsInstance = null;
             }
 
-            if (Hls.isSupported() && (src.includes('.m3u8') || src.includes('ts'))) {
+            // iOS Safari Native HLS check vs Hls.js
+            if (src.includes('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
+                // iOS Native HLS Engine (Hardware Accelerated on iPhone)
+                video.src = src;
+            } else if (Hls.isSupported() && (src.includes('.m3u8') || src.includes('ts'))) {
                 hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
                 hlsInstance.loadSource(src);
                 hlsInstance.attachMedia(video);
             } else {
+                // Standard MP4 stream (iOS Safari & Chrome Native)
                 video.src = src;
             }
 
-            video.play().catch(() => {});
+            video.load();
 
-            // 2. Connect Realtime WebSocket Relay
+            // Connect Realtime WebSocket
             connectWebSocket(r);
+
+            // Try auto-play; if iOS Safari blocks it, show the tap overlay
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    tapPlayOverlay.style.display = 'none';
+                }).catch(() => {
+                    tapPlayOverlay.style.display = 'flex';
+                });
+            } else {
+                tapPlayOverlay.style.display = 'flex';
+            }
         }
+
+        function userUnlockAndPlay() {
+            tapPlayOverlay.style.display = 'none';
+            video.play().catch(() => {});
+        }
+
+        video.addEventListener('play', () => {
+            tapPlayOverlay.style.display = 'none';
+        });
 
         function connectWebSocket(r) {
             if (ws) {
@@ -486,7 +553,6 @@
                 const targetPosSec = (data.pos || 0) / 1000.0;
                 const isPlaying = (data.state === 'PLAYING');
 
-                isSyncing = true;
                 if (Math.abs(video.currentTime - targetPosSec) > 1.5) {
                     video.currentTime = targetPosSec;
                 }
@@ -496,8 +562,6 @@
                 } else if (!isPlaying && !video.paused) {
                     video.pause();
                 }
-
-                setTimeout(() => { isSyncing = false; }, 300);
 
             } else if (data.action === 'emoji') {
                 spawnFloatingEmoji(data.emoji || '🔥');

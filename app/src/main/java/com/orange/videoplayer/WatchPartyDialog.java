@@ -39,6 +39,7 @@ public class WatchPartyDialog {
 
         MaterialButton btnShareRoom = v.findViewById(R.id.btn_share_room);
         MaterialButton btnCopyLink = v.findViewById(R.id.btn_copy_link);
+        MaterialButton btnShareHtmlFile = v.findViewById(R.id.btn_share_html_file);
         MaterialButton btnLeaveRoom = v.findViewById(R.id.btn_leave_room);
 
         MaterialButton btnCreateRoom = v.findViewById(R.id.btn_create_room);
@@ -106,6 +107,11 @@ public class WatchPartyDialog {
                 clipboard.setPrimaryClip(clip);
                 Toast.makeText(context, R.string.watch_party_copied, Toast.LENGTH_SHORT).show();
             }
+        });
+
+        btnShareHtmlFile.setOnClickListener(btn -> {
+            String roomId = manager.getRoomId();
+            WatchPartyWebPlayer.shareHtmlPlayerFile(context, roomId, streamUrl, title);
         });
 
         btnLeaveRoom.setOnClickListener(btn -> {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MyPlyr - المشاهدة الجماعية (Watch Party)</title>
+    <title>MyPlyr - المشاهدة الجماعية المتزامنة (Watch Party)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
             --text: #FFFFFF;
             --text-dim: #8B949E;
             --border: #21262D;
+            --green: #2EA043;
         }
 
         * {
@@ -37,6 +38,7 @@
             overflow: hidden;
         }
 
+        /* Top Header */
         header {
             background: rgba(20, 27, 45, 0.95);
             backdrop-filter: blur(12px);
@@ -66,6 +68,12 @@
             color: var(--accent);
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .room-badge {
             background: rgba(46, 160, 67, 0.15);
             color: #3FB950;
@@ -77,6 +85,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
         }
 
         .status-dot {
@@ -93,6 +102,18 @@
             50% { opacity: 0.5; transform: scale(0.85); }
         }
 
+        .btn-header-action {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Player Wrap */
         .player-wrap {
             position: relative;
             flex: 1;
@@ -132,7 +153,7 @@
         .flying-emoji {
             position: absolute;
             bottom: 70px;
-            font-size: 40px;
+            font-size: 42px;
             animation: flyUp 2.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
             pointer-events: none;
             z-index: 20;
@@ -157,7 +178,7 @@
             }
         }
 
-        /* Reaction Bar */
+        /* Reactions Bar */
         .reactions-container {
             background: rgba(20, 27, 45, 0.95);
             backdrop-filter: blur(12px);
@@ -188,6 +209,96 @@
         .emoji-btn:active {
             transform: scale(1.35);
         }
+
+        /* Setup / Join Modal */
+        .join-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(9, 13, 22, 0.96);
+            backdrop-filter: blur(16px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            padding: 20px;
+        }
+
+        .join-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+        }
+
+        .join-icon {
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+
+        .join-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .join-desc {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            text-align: right;
+            margin-bottom: 14px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 14px 16px;
+            background: #090D16;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #FFF;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            text-align: center;
+        }
+
+        .input-box:focus {
+            border-color: var(--accent);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: #FFF;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -197,16 +308,19 @@
         <div class="brand-title">
             <span>🍿</span> <div id="videoTitleText">MyPlyr Watch Party</div>
         </div>
-        <div class="room-badge">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="roomCodeText">WP-0000</span>
+        <div class="header-actions">
+            <div class="room-badge" onclick="openJoinModal()">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="roomCodeText">WP-0000</span>
+            </div>
+            <button class="btn-header-action" onclick="openJoinModal()">⚙️ إعدادات</button>
         </div>
     </header>
 
     <!-- Player Area -->
     <div class="player-wrap" id="playerWrap">
         <div class="sync-badge" id="syncStatus">
-            <span id="syncIcon">🟢</span> <span id="syncText">جاري الاتصال بالسيرفر...</span>
+            <span id="syncIcon">🟢</span> <span id="syncText">جاهز ومتزامن ✓</span>
         </div>
         <video id="videoPlayer" controls playsinline webkit-playsinline></video>
     </div>
@@ -221,10 +335,32 @@
         <button class="emoji-btn" onclick="sendReaction('😱')">😱</button>
     </div>
 
+    <!-- Manual Join / Setup Modal -->
+    <div class="join-overlay" id="joinOverlay" style="display: none;">
+        <div class="join-card">
+            <div class="join-icon">🍿</div>
+            <h2 class="join-title">المشاهدة الجماعية المتزامنة</h2>
+            <p class="join-desc">أدخل رمز الغرفة ورابط الفيديو للمشاهدة مع الأصدقاء بتزامن فوري وتفاعلات حية</p>
+            
+            <div class="input-group">
+                <label class="input-label">رمز الغرفة (Room Code):</label>
+                <input type="text" id="inputRoom" class="input-box" placeholder="مثال: WP-6901">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">رابط الفيديو (Video Stream URL):</label>
+                <input type="text" id="inputUrl" class="input-box" placeholder="http://... أو https://...">
+            </div>
+
+            <button class="btn-submit" onclick="applySettingsAndPlay()">▶️ بدء المشاهدة المتزامنة</button>
+        </div>
+    </div>
+
     <script>
+        // Parse Query Params
         const params = new URLSearchParams(window.location.search);
-        let room = (params.get('room') || 'WP-1001').trim();
-        let videoSrc = (params.get('src') || '').trim();
+        let room = (params.get('room') || localStorage.getItem('last_room') || '').trim();
+        let videoSrc = (params.get('src') || localStorage.getItem('last_src') || '').trim();
         let videoTitle = params.get('title') || 'مشاهدة جماعية';
 
         const video = document.getElementById('videoPlayer');
@@ -233,51 +369,84 @@
         const videoTitleText = document.getElementById('videoTitleText');
         const syncText = document.getElementById('syncText');
         const statusDot = document.getElementById('statusDot');
+        const joinOverlay = document.getElementById('joinOverlay');
+        const inputRoom = document.getElementById('inputRoom');
+        const inputUrl = document.getElementById('inputUrl');
 
-        roomCodeText.innerText = room;
-        videoTitleText.innerText = decodeURIComponent(videoTitle);
+        if (!room || !videoSrc) {
+            openJoinModal();
+        } else {
+            startParty(room, videoSrc, videoTitle);
+        }
 
-        // Auto proxy HTTP streams through HTTPS Cloudflare Worker to avoid Mixed Content
-        const PROXY_BASE = 'https://videoproxy.wafaiealaa.workers.dev/?url=';
+        function openJoinModal() {
+            inputRoom.value = room;
+            inputUrl.value = videoSrc;
+            joinOverlay.style.display = 'flex';
+        }
 
-        function getPlayableUrl(rawUrl) {
-            if (!rawUrl) return '';
-            if (rawUrl.startsWith('http://')) {
-                return PROXY_BASE + encodeURIComponent(rawUrl);
+        function applySettingsAndPlay() {
+            const inRoom = inputRoom.value.trim();
+            const inUrl = inputUrl.value.trim();
+
+            if (!inRoom || !inUrl) {
+                alert('يرجى إدخال رمز الغرفة ورابط الفيديو');
+                return;
             }
-            return rawUrl;
+
+            room = inRoom;
+            videoSrc = inUrl;
+            localStorage.setItem('last_room', room);
+            localStorage.setItem('last_src', videoSrc);
+
+            joinOverlay.style.display = 'none';
+            startParty(room, videoSrc, 'مشاهدة متزامنة');
         }
 
-        function loadVideo(sourceUrl) {
-            const finalUrl = getPlayableUrl(sourceUrl);
-            if (!finalUrl) return;
-
-            if (Hls.isSupported() && (sourceUrl.includes('.m3u8') || sourceUrl.includes('ts'))) {
-                const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-                hls.loadSource(finalUrl);
-                hls.attachMedia(video);
-            } else {
-                video.src = finalUrl;
-            }
-        }
-
-        if (videoSrc) {
-            loadVideo(videoSrc);
-        }
-
-        // Realtime Signaling via ntfy.sh
-        const topic = 'myplyr-party-' + room.toLowerCase();
+        let hlsInstance = null;
         let ws = null;
+        let isSyncing = false;
 
-        function connectWebSocket() {
+        function startParty(r, src, title) {
+            roomCodeText.innerText = r;
+            videoTitleText.innerText = decodeURIComponent(title);
+
+            // 1. Load Video directly
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
+
+            if (Hls.isSupported() && (src.includes('.m3u8') || src.includes('ts'))) {
+                hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+                hlsInstance.loadSource(src);
+                hlsInstance.attachMedia(video);
+            } else {
+                video.src = src;
+            }
+
+            video.play().catch(() => {});
+
+            // 2. Connect Realtime WebSocket Relay
+            connectWebSocket(r);
+        }
+
+        function connectWebSocket(r) {
+            if (ws) {
+                try { ws.close(); } catch(e){}
+                ws = null;
+            }
+
+            const topic = 'myplyr-party-' + r.toLowerCase();
             const wsUrl = 'wss://ntfy.sh/' + topic + '/ws';
+
             try {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
                     syncText.innerText = 'متصل ومتزامن مع المضيف ✓';
                     statusDot.style.background = '#3FB950';
-                    publish({ action: 'join', sender: 'Safari (iOS)' });
+                    publish(topic, { action: 'join', sender: 'Safari (iOS)' });
                 };
 
                 ws.onmessage = (event) => {
@@ -293,18 +462,18 @@
                 ws.onclose = () => {
                     syncText.innerText = 'جاري إعادة الاتصال...';
                     statusDot.style.background = '#E50914';
-                    setTimeout(connectWebSocket, 2000);
+                    setTimeout(() => connectWebSocket(room), 2000);
                 };
 
                 ws.onerror = () => {
                     syncText.innerText = 'تعذر الاتصال بالسيرفر';
                 };
             } catch (e) {
-                setTimeout(connectWebSocket, 3000);
+                setTimeout(() => connectWebSocket(room), 3000);
             }
         }
 
-        function publish(data) {
+        function publish(topic, data) {
             fetch('https://ntfy.sh/' + topic, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain; charset=utf-8' },
@@ -317,6 +486,7 @@
                 const targetPosSec = (data.pos || 0) / 1000.0;
                 const isPlaying = (data.state === 'PLAYING');
 
+                isSyncing = true;
                 if (Math.abs(video.currentTime - targetPosSec) > 1.5) {
                     video.currentTime = targetPosSec;
                 }
@@ -327,6 +497,8 @@
                     video.pause();
                 }
 
+                setTimeout(() => { isSyncing = false; }, 300);
+
             } else if (data.action === 'emoji') {
                 spawnFloatingEmoji(data.emoji || '🔥');
             }
@@ -334,11 +506,13 @@
 
         function sendReaction(emoji) {
             spawnFloatingEmoji(emoji);
-            publish({
-                action: 'emoji',
-                emoji: emoji,
-                sender: 'Safari'
-            });
+            if (room) {
+                publish('myplyr-party-' + room.toLowerCase(), {
+                    action: 'emoji',
+                    emoji: emoji,
+                    sender: 'Safari'
+                });
+            }
         }
 
         function spawnFloatingEmoji(emoji) {
@@ -349,8 +523,6 @@
             playerWrap.appendChild(el);
             setTimeout(() => el.remove(), 2400);
         }
-
-        connectWebSocket();
     </script>
 </body>
 </html>

@@ -141,13 +141,26 @@
                 app:strokeColor="#30363D" />
         </LinearLayout>
 
+        <!-- Share HTML Player File Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_share_html_file"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="#21262D"
+            android:text="📱 إرسال ملف المشغل للآيفون (واتساب)"
+            android:textColor="@color/accent"
+            android:textSize="13sp"
+            app:cornerRadius="10dp" />
+
         <!-- Leave Room Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_leave_room"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:text="@string/watch_party_leave"
             android:textColor="@color/status_blocked_text" />
 

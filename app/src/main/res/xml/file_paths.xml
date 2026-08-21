@@ -4,4 +4,5 @@
     <external-path name="downloads" path="Download" />
     <external-files-path name="app_downloads" path="Download" />
     <external-files-path name="external_app_files" path="." />
+    <cache-path name="app_cache" path="." />
 </paths>

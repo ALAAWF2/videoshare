@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">مشغلي</string>
+    <string name="add_link">إضافة رابط</string>
+    <string name="add">إضافة</string>
+    <string name="cancel">إلغاء</string>
+    <string name="save">حفظ</string>
+    <string name="delete">حذف</string>
+    <string name="rename">تعديل الاسم</string>
+    <string name="delete_confirm">حذف هذا الرابط نهائياً؟</string>
+    <string name="restart">من البداية</string>
+    <string name="not_started">لم تبدأ بعد</string>
+    <string name="done">اكتملت ✓</string>
+    <string name="empty_hint">لا توجد روابط محفوظة\nاضغط + لإضافة رابط الحلقة\nأو شارك الرابط إلى التطبيق من أي برنامج</string>
+    <string name="url_hint">رابط الفيديو (http/https)</string>
+    <string name="name_hint">الاسم (اختياري)</string>
+    <string name="paste">لصق</string>
+    <string name="play_error">تعذر تشغيل هذا الرابط</string>
+    <string name="bad_url">الرابط لازم يبدأ بـ http:// أو https://</string>
+    <string name="saved_count">المحفوظات: %1$d</string>
+
+    <!-- Settings Screen -->
+    <string name="settings">الإعدادات</string>
+    <string name="settings_section_playback">التشغيل والسرعة</string>
+    <string name="settings_section_gestures">الإيماءات والتحكم</string>
+    <string name="settings_default_speed">سرعة التشغيل الافتراضية</string>
+    <string name="settings_default_speed_summary">السرعة التي سيبدأ بها أي فيديو جديد</string>
+    <string name="settings_long_press_enable">تسريع بالضغط المطول</string>
+    <string name="settings_long_press_summary">تسريع الفيديو مؤقتاً عند الضغط المطول على الشاشة</string>
+    <string name="settings_long_press_speed">سرعة الضغط المطول</string>
+    <string name="settings_double_tap_enable">التقديم والترجيع بالنقر المزدوج</string>
+    <string name="settings_double_tap_summary">نقر مزدوج على يمين أو يسار الشاشة للتقديم أو الترجيع</string>
+    <string name="settings_double_tap_seconds">مدة التقديم والترجيع</string>
+    <string name="settings_brightness_gesture">إيماءة السطوع</string>
+    <string name="settings_brightness_gesture_summary">سحب عمودي على يسار الشاشة لتعديل السطوع</string>
+    <string name="settings_volume_gesture">إيماءة مستوى الصوت</string>
+    <string name="settings_volume_gesture_summary">سحب عمودي على يمين الشاشة لتعديل مستوى الصوت</string>
+    <string name="settings_scrub_enable">السحب الأفقي (مشي الفيديو)</string>
+    <string name="settings_scrub_summary">سحب أفقي على الشاشة للتنقل والتقديم والترجيع داخل الفيديو</string>
+    <string name="settings_scrub_window">نافذة السحب الأفقي</string>
+    <string name="settings_scrub_window_summary">المدة الزمنية المقابلة لعرض الشاشة بالكامل</string>
+
+    <!-- Player Controls & Indicators -->
+    <string name="speed">السرعة</string>
+    <string name="live_stream">بث مباشر</string>
+
+    <!-- IPTV Feature -->
+    <string name="iptv_title">اشتراكات IPTV</string>
+    <string name="iptv_add_title">إضافة اشتراك IPTV</string>
+    <string name="iptv_type_xtream">Xtream Codes</string>
+    <string name="iptv_type_m3u">قائمة M3U</string>
+    <string name="iptv_name_hint">اسم الاشتراك (اختياري)</string>
+    <string name="iptv_server_hint">رابط السيرفر (مثال: http://host:port)</string>
+    <string name="iptv_username_hint">اسم المستخدم (Username)</string>
+    <string name="iptv_password_hint">كلمة المرور (Password)</string>
+    <string name="iptv_m3u_url_hint">رابط القائمة (http/https)</string>
+    <string name="iptv_empty_hint">لا توجد اشتراكات مضافة\nاضغط + لإضافة اشتراكك بـ Xtream Codes أو رابط M3U</string>
+    <string name="iptv_delete_confirm">حذف هذا الاشتراك نهائياً؟</string>
+    <string name="iptv_section_live">بث مباشر</string>
+    <string name="iptv_section_vod">أفلام</string>
+    <string name="iptv_section_series">مسلسلات</string>
+    <string name="iptv_all_categories">الكل</string>
+    <string name="iptv_channels_count">%1$d قناة</string>
+    <string name="iptv_movies_count">%1$d فيلم</string>
+    <string name="iptv_series_count">%1$d مسلسل</string>
+    <string name="iptv_items_count">%1$d عنصر</string>
+    <string name="iptv_loading">جاري التحميل...</string>
+    <string name="iptv_authenticating">جاري التحقق من بيانات الاشتراك...</string>
+    <string name="iptv_error_auth">بيانات الاشتراك غير صحيحة أو انتهت صلاحيته</string>
+    <string name="iptv_error_network">تعذر الاتصال بالسيرفر، تأكد من الاتصال بالإنترنت والرابط</string>
+    <string name="iptv_error_parse">حدث خطأ أثناء قراءة البيانات من السيرفر</string>
+    <string name="iptv_error_empty_playlist">القائمة فارغة أو تعذر العثور على قنوات</string>
+    <string name="iptv_missing_fields">يرجى تعبئة الحقول المطلوبة</string>
+    <string name="iptv_seasons">المواسم</string>
+    <string name="iptv_season_number">الموسم %1$s</string>
+    <string name="iptv_episodes">الحلقات</string>
+    <string name="iptv_episode_number">الحلقة %1$s: %2$s</string>
+    <string name="iptv_search_hint">بحث...</string>
+    <string name="iptv_refresh">تحديث</string>
+    <string name="iptv_subscriptions_count">الاشتراكات: %1$d</string>
+    <string name="iptv_preset_splayer">تعبئة سريعة: S Player / أكشن Tv</string>
+    <string name="iptv_preset_name">أكشن Tv</string>
+    <string name="iptv_no_items">لا توجد عناصر لعرضها</string>
+    <string name="iptv_direct_link">الرابط المباشر</string>
+    <string name="iptv_extracting_link">جاري استخراج الرابط...</string>
+    <string name="iptv_copy">نسخ</string>
+    <string name="iptv_share">مشاركة</string>
+    <string name="iptv_play_btn">تشغيل</string>
+    <string name="iptv_retry">إعادة المحاولة</string>
+    <string name="iptv_link_copied">تم نسخ الرابط</string>
+    <string name="iptv_all_season_links">روابط الحلقات</string>
+    <string name="iptv_copy_all">نسخ الكل</string>
+    <string name="iptv_share_all">مشاركة الكل</string>
+    <string name="iptv_all_links_copied">تم نسخ جميع الروابط</string>
+    <string name="iptv_batch_progress">تم استخراج %1$d من %2$d...</string>
+    <string name="iptv_failed_link">تعذر استخراج الرابط</string>
+    <string name="iptv_batch_header">روابط حلقات %1$s - %2$s:</string>
+    <string name="iptv_close">إغلاق</string>
+    <string name="iptv_no_episodes_for_season">لا توجد حلقات في هذا الموسم</string>
+    <string name="iptv_error_all_mirrors_blocked">كل السيرفرات المبدلة محجوبة/غير متاحة. جرّب شبكة الجوال أو فعّل VPN</string>
+    <string name="iptv_recheck_mirrors">إعادة المحاولة مع ميرور آخر</string>
+    <string name="iptv_rechecking_mirrors">جاري فحص وتجربة سيرفرات الميرور...</string>
+    <string name="iptv_mirror_switched">تم التبديل بنجاح إلى السيرفر:\n%1$s</string>
+    <string name="iptv_mirror_check_title">فحص سيرفرات الاشتراك</string>
+    <string name="iptv_mirror_probing">جاري فحص السيرفرات...</string>
+    <string name="iptv_mirror_probing_progress">جاري الفحص: %1$d من %2$d...</string>
+    <string name="iptv_mirror_probe_done">اكتمل الفحص (%1$d سيرفر)</string>
+    <string name="iptv_mirror_status_ok">✓ شغال (%1$d ms)</string>
+    <string name="iptv_mirror_status_blocked">محجوب أو متعذر</string>
+    <string name="iptv_mirror_status_auth_error">بيانات غير صحيحة</string>
+    <string name="iptv_mirror_none_ok">لا يوجد سيرفر شغال على هذه الشبكة</string>
+    <string name="iptv_mirror_use_working">استخدام السيرفر الشغال</string>
+    <string name="iptv_diagnose_mirrors">فحص سيرفرات الاشتراك</string>
+    <string name="iptv_blocked_title">شبكتك تحجب خوادم IPTV</string>
+    <string name="iptv_blocked_description">الحجب من مزود الخدمة (الهيئة) ويشمل WiFi والجوال.\n\nالحلول:\n1) فعّل VPN أو WARP (تطبيق 1.1.1.1 المجاني) ثم أعد الفحص.\n2) على شبكة غير سعودية (تجوال) يشتغل مباشرة.\n\nملاحظة مهمة: اشتراكك مسجل على السيرفر الأساسي فقط — الميرورات لا تحمل بياناتك. شغّل VPN وافتح عبر السيرفر الأساسي، وستتحول الروابط للرابط المباشر تلقائياً (مشاهدة بلا VPN).</string>
+    <string name="iptv_how_to_install_warp">كيف أثبّت WARP؟</string>
+    <string name="iptv_retry_probe">إعادة الفحص</string>
+    <string name="save_anyway">حفظ على أي حال</string>
+    <string name="save_anyway_confirm">هل ترغب في حفظ الاشتراك على أي حال؟</string>
+    <string name="open_warp_error">تعذر فتح متجر التطبيقات</string>
+    <string name="no_working_server_selected">يرجى اختيار سيرفر شغال أولاً</string>
+    <string name="error_play_failed_hint">تعذر الاتصال بالسيرفر. الحل: فعّل VPN/WARP مؤقتاً ثم اضغط إعادة المحاولة — سيتحول الرابط للرابط المباشر تلقائياً ويشتغل بعد إطفاء VPN</string>
+
+    <!-- Pass 4 Player Enhancements -->
+    <string name="settings_pip_enable">النافذة العائمة (PiP)</string>
+    <string name="settings_pip_summary">تشغيل الفيديو في نافذة عائمة عند الخروج من التطبيق</string>
+    <string name="pip_enter">نافذة عائمة</string>
+
+    <string name="sleep_timer">مؤقت النوم</string>
+    <string name="sleep_timer_off">إيقاف</string>
+    <string name="sleep_timer_15m">15 دقيقة</string>
+    <string name="sleep_timer_30m">30 دقيقة</string>
+    <string name="sleep_timer_45m">45 دقيقة</string>
+    <string name="sleep_timer_60m">60 دقيقة</string>
+    <string name="sleep_timer_90m">90 دقيقة</string>
+    <string name="sleep_timer_ended">انتهى مؤقت النوم</string>
+    <string name="sleep_timer_set">تم ضبط مؤقت النوم: %1$s</string>
+
+    <string name="next_episode">الحلقة التالية</string>
+
+    <string name="error_play_failed">تعذر تشغيل الرابط</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="back">رجوع</string>
+
+    <string name="iptv_favorites">المفضلة</string>
+    <string name="iptv_favorites_title">المفضلة</string>
+    <string name="iptv_favorites_count">المفضلة: %1$d</string>
+    <string name="iptv_favorites_empty">لا توجد عناصر في المفضلة\nاضغط على أيقونة النجمة ⭐ لإضافة قنوات أو حلقات</string>
+    <string name="iptv_fav_added">تمت الإضافة إلى المفضلة</string>
+    <string name="iptv_fav_removed">تمت الإزالة من المفضلة</string>
+    <string name="iptv_fav_delete_confirm">إزالة هذا العنصر من المفضلة؟</string>
+
+    <!-- ExoPlayer controls (Arabic) -->
+    <string name="exo_controls_play">تشغيل</string>
+    <string name="exo_controls_pause">إيقاف مؤقت</string>
+    <string name="exo_controls_rewind">ترجيع</string>
+    <string name="exo_controls_rewind_description">ترجيع ١٠ ثوان</string>
+    <string name="exo_controls_fastforward">تقديم</string>
+    <string name="exo_controls_fastforward_description">تقديم ١٠ ثوان</string>
+    <string name="exo_controls_play_description">تشغيل</string>
+    <string name="exo_controls_pause_description">إيقاف مؤقت</string>
+    <string name="exo_controls_next">التالي</string>
+    <string name="exo_controls_next_description">التالي</string>
+    <string name="exo_controls_previous">السابق</string>
+    <string name="exo_controls_previous_description">السابق</string>
+    <string name="exo_controls_stop">إيقاف</string>
+    <string name="exo_controls_hide">إخفاء الأزرار</string>
+    <string name="exo_controls_show">إظهار الأزرار</string>
+    <string name="exo_controls_fullscreen_enter">ملء الشاشة</string>
+    <string name="exo_controls_fullscreen_exit">خروج من ملء الشاشة</string>
+    <string name="exo_controls_seek_bar_description">شريط التقدم</string>
+    <string name="exo_controls_audio_track">الصوت</string>
+    <string name="exo_controls_repeat_on">تكرار مفعل</string>
+    <string name="exo_controls_repeat_off">تكرار معطل</string>
+    <string name="exo_controls_repeat_all_description">تكرار الكل</string>
+    <string name="exo_controls_repeat_one_description">تكرار واحد</string>
+    <string name="exo_controls_shuffle_on">خلط مفعل</string>
+    <string name="exo_controls_shuffle_off">خلط معطل</string>
+    <string name="exo_controls_shuffle_description">خلط</string>
+    <string name="exo_controls_time_bar">وقت التشغيل</string>
+    <string name="exo_controls_duration_description">المدة</string>
+    <string name="exo_controls_position_description">الموضع</string>
+    <string name="exo_controls_overflow_description">خيارات إضافية</string>
+    <string name="exo_controls_cc_on_description">تفعيل الترجمة</string>
+    <string name="exo_controls_cc_off_description">إيقاف الترجمة</string>
+    <string name="exo_controls_vr_description">وضع الواقع الافتراضي</string>
+    <string name="exo_error_message">تعذر تشغيل الملف</string>
+    <string name="resolving_direct">جاري تحويل الرابط المباشر…</string>
+    <string name="used_direct_link">تم التحويل للرابط المباشر ✅</string>
+    <string name="tunnel_toggle">تبديل النفق</string>
+    <string name="tunnel_not_installed_title">النفق المدمج</string>
+    <string name="tunnel_not_installed_msg">ثبّت تطبيق WireGuard المجاني أولاً، ثم استورد ملف النفق (warp_alaa.conf) الذي وصلك وسمِّ النفق \"warp\". بعدها سيعمل هذا الزر مباشرة.</string>
+    <string name="tunnel_open_store">فتح المتجر</string>
+    <string name="tunnel_toggle_sent">تم تبديل النفق — تحقق من إشعار WireGuard</string>
+    <string name="tunnel_toggle_error">تعذر تبديل النفق: تأكد أن النفق اسمه \"warp\"</string>
+    <string name="tunnel_active">النفق شغال ✅ — افتح اشتراكك الآن</string>
+    <string name="tunnel_open_wg_hint">افتح WireGuard وبدّل النفق من شاشة التطبيق</string>
+
+    <!-- Downloads Section -->
+    <string name="downloads">التنزيلات</string>
+    <string name="downloads_title">التنزيلات (المشاهدة أوفلاين)</string>
+    <string name="downloads_count">التنزيلات: %1$d</string>
+    <string name="downloads_empty">لا توجد فيديوهات محملة\nاضغط على أيقونة التحميل ⬇️ في الأفلام أو الحلقات لمشاهدتها بدون إنترنت</string>
+    <string name="download_started">بدأ التحميل: %1$s</string>
+    <string name="download_failed">تعذر بدء التحميل</string>
+    <string name="download_status_downloading">جاري التحميل (%1$d%%)</string>
+    <string name="download_status_completed">اكتمل التحميل ✓</string>
+    <string name="download_status_failed">فشل التحميل ⚠️</string>
+    <string name="download_status_paused">متوقف مؤقتاً ⏸️</string>
+    <string name="download_delete_confirm">حذف هذا الملف المحمل من الجهاز؟</string>
+    <string name="download_file_not_found">الملف غير موجود في ذاكرة الجهاز</string>
+    <string name="download_action">تحميل</string>
+    <string name="download_again">إعادة التحميل</string>
+    <string name="download_cancel">إلغاء التحميل</string>
+    <string name="download_paused">التنزيل متوقف مؤقتاً</string>
+    <string name="download_resumed">استئناف</string>
+    <string name="download_resume">استئناف</string>
+    <string name="download_pause">إيقاف مؤقت</string>
+    <string name="download_resuming_hint">يُستكمل التحميل تلقائياً عند عودة الشبكة — أو اضغط استئناف</string>
+    <string name="download_notif_channel">التنزيلات</string>
+    <string name="download_waiting_network">بانتظار الشبكة…</string>
+    <string name="download_failed_retry">فشل الاتصال — إعادة المحاولة…</string>
+    <string name="download_options">خيارات التحميل</string>
+
+    <!-- Watch History Section -->
+    <string name="history">سجل المشاهدة</string>
+    <string name="history_title">سجل المشاهدة</string>
+    <string name="history_count">المشاهدات: %1$d</string>
+    <string name="history_empty">سجل المشاهدة فارغ\nالفيديوهات والقنوات التي تشاهدها ستظهر هنا لتستأنفها بسهولة</string>
+    <string name="history_clear_all">مسح السجل</string>
+    <string name="history_clear_confirm">هل ترغب في مسح سجل المشاهدة بالكامل؟</string>
+    <string name="history_cleared">تم مسح سجل المشاهدة</string>
+    <string name="history_delete_confirm">إزالة هذا العنصر من سجل المشاهدة؟</string>
+    <string name="history_last_watched">شوهد: %1$s</string>
+
+    <!-- Rich Details Modal & Poster Grid -->
+    <string name="details_title">تفاصيل العمل</string>
+    <string name="details_rating">التقييم: %1$s</string>
+    <string name="details_release_date">سنة الإنتاج: %1$s</string>
+    <string name="details_duration">المدة: %1$s</string>
+    <string name="details_genre">التصنيف: %1$s</string>
+    <string name="details_cast">طاقم التمثيل: %1$s</string>
+    <string name="details_director">المخرج: %1$s</string>
+    <string name="details_plot">القصة:</string>
+    <string name="details_no_plot">لا يوجد وصف متوفر لهذا العمل.</string>
+    <string name="details_view_episodes">عرض الحلقات والمواسم</string>
+    <string name="toggle_grid">عرض شبكي</string>
+    <string name="toggle_list">عرض قائمة</string>
+
+    <!-- Local Media (Phone Audio & Video) -->
+    <string name="local_media">ملفات الجهاز</string>
+    <string name="local_media_title">ملفات الهاتف (فيديو وصوت)</string>
+    <string name="local_media_videos">الفيديوهات</string>
+    <string name="local_media_audio">الصوتيات</string>
+    <string name="local_media_all">الكل</string>
+    <string name="local_media_permission_needed">يتطلب التطبيق إذن الوصول لملفات الوسائط لعرض الفيديوهات والأصوات الموجودة على جهازك</string>
+    <string name="local_media_grant_permission">منح الإذن</string>
+    <string name="local_media_empty">لم يتم العثور على ملفات وسائط في هاتفك</string>
+    <string name="local_media_empty_videos">لا توجد ملفات فيديو في هاتفك</string>
+    <string name="local_media_empty_audio">لا توجد ملفات صوتية في هاتفك</string>
+    <string name="local_media_count">الملفات: %1$d</string>
+    <string name="local_media_search_hint">بحث في ملفات الهاتف...</string>
+    <string name="local_media_loading">جاري مسح ملفات الوسائط...</string>
+    <string name="fav_added_direct">تمت الإضافة للمفضلة — الرابط المباشر ✓</string>
+    <string name="fav_added">تمت الإضافة للمفضلة</string>
+
+    <!-- Watch Party / SyncPlay -->
+    <string name="watch_party">المشاهدة الجماعية</string>
+    <string name="watch_party_title">المشاهدة الجماعية (Watch Party)</string>
+    <string name="watch_party_desc">شاهد هذا الفيديو متزامناً في نفس اللحظة مع أصدقائك (آيفون، أندرويد، كمبيوتر)</string>
+    <string name="watch_party_create_room">إنشاء غرفة جديدة</string>
+    <string name="watch_party_join_room">الانضمام لغرفة</string>
+    <string name="watch_party_room_code">رمز الغرفة: %1$s</string>
+    <string name="watch_party_enter_code">أدخل رمز الغرفة:</string>
+    <string name="watch_party_share_text">تعال نحضر سوى على MyPlyr! 🍿\nرمز الغرفة: %1$s\nرابط الآيفون والكمبيوتر:\n%2$s</string>
+    <string name="watch_party_connected_peers">المشاهدون المتصلون: %1$d 👥</string>
+    <string name="watch_party_you_are_host">أنت المضيف (Host) 👑</string>
+    <string name="watch_party_you_are_guest">أنت ضيف متزامن (Guest) 🎧</string>
+    <string name="watch_party_leave">مغادرة الغرفة</string>
+    <string name="watch_party_copied">تم نسخ رابط المشاهدة</string>
+    <string name="watch_party_syncing">جاري مزامنة التشغيل...</string>
+    <string name="watch_party_joined">انضم صديق جديد للغرفة 🎉</string>
+    <string name="watch_party_chat_hint">اكتب رسالة سريعة...</string>
+</resources>
+
+
+

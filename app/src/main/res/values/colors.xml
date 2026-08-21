@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0D1117</color>
+    <color name="card">#1A2029</color>
+    <color name="text">#E6EDF3</color>
+    <color name="dim">#8B949E</color>
+    <color name="accent">#FF6D2E</color>
+    <color name="progress_bg">#2A313A</color>
+    <color name="status_ok_text">#3FB950</color>
+    <color name="status_ok_bg">#1A3A2A</color>
+    <color name="status_blocked_text">#F85149</color>
+    <color name="status_blocked_bg">#381E24</color>
+    <color name="status_auth_text">#E3B341</color>
+    <color name="status_auth_bg">#382E1E</color>
+</resources>

@@ -42,10 +42,12 @@ public class WatchPartyWebPlayer {
 
         if (videoUrl != null && !videoUrl.isEmpty()) {
             if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://")) {
-                String webPlayerUrl = getShareableWebUrl(roomId, videoUrl, videoTitle);
-                sb.append("🌐 رابط المشاهدة المباشر (متزامن):\n")
-                  .append(webPlayerUrl).append("\n\n");
-                sb.append("▶️ رابط البث المباشر المباشر:\n").append(videoUrl);
+                sb.append("🌐 الطريقة 1: التشغيل المباشر في Safari (للآيفون):\n")
+                  .append(videoUrl).append("\n\n");
+
+                String vlcUrl = "vlc://" + videoUrl;
+                sb.append("📱 الطريقة 2: التشغيل التلقائي عبر تطبيق VLC (للآيفون بضغطة واحدة):\n")
+                  .append(vlcUrl);
             } else {
                 sb.append("📁 ملاحظة: هذا الفيديو مخزن محلياً على الهاتف.");
             }

@@ -6,7 +6,7 @@ import java.net.URLEncoder;
 public class WatchPartyWebPlayer {
 
     // Live hosted GitHub Pages Web Player for iOS Safari & Web
-    private static final String HOSTED_WEB_PLAYER_URL = "https://alaawf2.github.io/videoshare/web/";
+    private static final String HOSTED_WEB_PLAYER_URL = "https://alaawf2.github.io/videoshare/";
 
     public static String getShareableWebUrl(String roomId, String videoUrl, String videoTitle) {
         if (roomId == null) roomId = "WP-1001";

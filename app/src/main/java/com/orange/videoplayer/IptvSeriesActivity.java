@@ -46,6 +46,8 @@ public class IptvSeriesActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SettingsStore settingsStore = new SettingsStore(this);
+        setTheme(settingsStore.getThemeResId());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.dialog_iptv_series);
 

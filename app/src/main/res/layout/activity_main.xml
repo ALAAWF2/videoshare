@@ -15,108 +15,80 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/bg"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             app:title="@string/app_name"
             app:titleTextColor="@color/text"
             app:subtitleTextColor="@color/dim" />
 
-        <!-- Quick Access Card: Local Media -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_local_media"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="4dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground"
-            app:cardBackgroundColor="@color/card"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="1dp"
-            app:strokeWidth="0dp">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/empty"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp">
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:lineSpacingExtra="6dp"
+                android:padding="24dp"
+                android:text="@string/empty_hint"
+                android:textColor="@color/dim"
+                android:textSize="15sp"
+                android:visibility="gone" />
 
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_circle_indicator"
-                    android:padding="9dp"
-                    android:src="@drawable/ic_video"
-                    app:tint="@color/accent" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/local_media_title"
-                        android:textColor="@color/text"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="تصفح وتشغيل الفيديوهات والأصوات المخزنة على هاتفك"
-                        android:textColor="@color/dim"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_fast_forward"
-                    app:tint="@color/dim" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <TextView
-            android:id="@+id/empty"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:lineSpacingExtra="6dp"
-            android:text="@string/empty_hint"
-            android:textColor="@color/dim"
-            android:textSize="16sp"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:clipToPadding="false"
-            android:padding="6dp" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="96dp" />
+        </FrameLayout>
     </LinearLayout>
 
+    <!-- Floating Action Button for Adding Links -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="94dp"
         android:contentDescription="@string/add_link"
         app:backgroundTint="@color/accent"
+        app:elevation="6dp"
         app:srcCompat="@drawable/ic_add"
         app:tint="@android:color/white" />
+
+    <!-- Floating Frosted Glass Bottom Navigation Bar -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="14dp">
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:background="@drawable/bg_frosted_bottom_nav"
+            android:elevation="8dp"
+            app:elevation="8dp"
+            app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator"
+            app:itemIconSize="22dp"
+            app:itemIconTint="@color/selector_nav_item"
+            app:itemPaddingBottom="6dp"
+            app:itemPaddingTop="6dp"
+            app:itemRippleColor="@color/accent_glow"
+            app:itemTextColor="@color/selector_nav_item"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_nav_menu" />
+    </FrameLayout>
 
 </FrameLayout>

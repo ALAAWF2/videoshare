@@ -19,6 +19,12 @@ public class SettingsStore {
     public static final String KEY_SCRUB_ENABLED = "scrub_enabled";
     public static final String KEY_SCRUB_WINDOW_SECONDS = "scrub_window_seconds";
     public static final String KEY_PIP_ENABLED = "pip_enabled";
+    public static final String KEY_THEME = "app_theme";
+
+    public static final String THEME_DEFAULT = "default";
+    public static final String THEME_AMOLED = "amoled";
+    public static final String THEME_OCEAN = "ocean";
+    public static final String THEME_CYBERPUNK = "cyberpunk";
 
     public static final float[] SPEED_OPTIONS = new float[]{0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 2.5f, 3.0f};
     public static final String[] SPEED_LABELS = new String[]{"0.5×", "0.75×", "1×", "1.25×", "1.5×", "2×", "2.5×", "3×"};
@@ -113,6 +119,26 @@ public class SettingsStore {
 
     public void setPipEnabled(boolean enabled) {
         sp.edit().putBoolean(KEY_PIP_ENABLED, enabled).apply();
+    }
+
+    public String getAppTheme() {
+        return sp.getString(KEY_THEME, THEME_DEFAULT);
+    }
+
+    public void setAppTheme(String theme) {
+        sp.edit().putString(KEY_THEME, theme).apply();
+    }
+
+    public int getThemeResId() {
+        String theme = getAppTheme();
+        if (THEME_AMOLED.equals(theme)) {
+            return R.style.Theme_MyPlyr_Amoled;
+        } else if (THEME_OCEAN.equals(theme)) {
+            return R.style.Theme_MyPlyr_Ocean;
+        } else if (THEME_CYBERPUNK.equals(theme)) {
+            return R.style.Theme_MyPlyr_Cyberpunk;
+        }
+        return R.style.Theme_MyPlyr;
     }
 
     public static String formatSpeed(float speed) {

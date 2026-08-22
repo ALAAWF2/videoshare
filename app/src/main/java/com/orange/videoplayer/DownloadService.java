@@ -8,38 +8,46 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import com.yausername.youtubedl_android.YoutubeDL;
+import com.yausername.youtubedl_android.YoutubeDLRequest;
+import com.yausername.youtubedl_android.YoutubeDLResponse;
+
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import kotlin.Unit;
+import kotlin.jvm.functions.Function3;
+
+/**
+ * Universal background download service powered by yt-dlp & bundled FFmpeg.
+ * Provides foreground progress notifications, pause/resume, and automatic MediaStore indexing.
+ */
 public class DownloadService extends Service {
+
+    private static final String TAG = "DownloadService";
 
     public static final String ACTION_START_DOWNLOAD = "com.orange.videoplayer.action.START_DOWNLOAD";
     public static final String ACTION_PAUSE = "com.orange.videoplayer.action.PAUSE_DOWNLOAD";
@@ -49,25 +57,26 @@ public class DownloadService extends Service {
     public static final String EXTRA_ID = "id";
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_URL = "url";
+    public static final String EXTRA_FORMAT = "format";
+    public static final String EXTRA_AUDIO_ONLY = "audio_only";
     public static final String EXTRA_ICON = "icon";
 
     private static final String CHANNEL_ID = "downloads";
-    private static final int NOTIF_ID_FOREGROUND = 1;
-    private static final String USER_AGENT = "IPTVSmartersPro/3.1.5 (Android; Mobile)";
+    private static final int NOTIF_ID_FOREGROUND = 1001;
 
     public static final Set<Long> activeIds = Collections.synchronizedSet(new HashSet<>());
-    private final Map<Long, DownloadWorker> workers = new ConcurrentHashMap<>();
+    private final Map<Long, DownloadTask> runningTasks = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    private ConnectivityManager.NetworkCallback networkCallback;
     private PowerManager.WakeLock wakeLock;
     private boolean isForegroundStarted = false;
+
+    private static final Pattern PROGRESS_SIZE_PATTERN = Pattern.compile("of\\s+~?\\s*([0-9.]+\\s*[KMGTP]?i?B)", Pattern.CASE_INSENSITIVE);
 
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        registerNetworkCallback();
     }
 
     @Override
@@ -100,131 +109,7 @@ public class DownloadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterNetworkCallback();
-        for (DownloadWorker worker : workers.values()) {
-            worker.pause();
-        }
-        workers.clear();
-        activeIds.clear();
         releaseWakeLock();
-        executor.shutdownNow();
-    }
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (nm != null) {
-                NotificationChannel channel = new NotificationChannel(
-                        CHANNEL_ID,
-                        getString(R.string.download_notif_channel),
-                        NotificationManager.IMPORTANCE_LOW
-                );
-                channel.setDescription("إشعارات تنزيل الفيديوهات");
-                channel.setShowBadge(false);
-                nm.createNotificationChannel(channel);
-            }
-        }
-    }
-
-    private void ensureForeground(String title, String message) {
-        Notification notification = buildForegroundNotification(title, message, -1, true);
-        if (!isForegroundStarted) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    startForeground(NOTIF_ID_FOREGROUND, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-                } else {
-                    startForeground(NOTIF_ID_FOREGROUND, notification);
-                }
-                isForegroundStarted = true;
-            } catch (Exception ignored) {
-            }
-        } else {
-            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (nm != null) {
-                nm.notify(NOTIF_ID_FOREGROUND, notification);
-            }
-        }
-    }
-
-    private Notification buildForegroundNotification(String title, String message, int progress, boolean indeterminate) {
-        Intent intent = new Intent(this, DownloadsActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pi = PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        String displayTitle = (title != null && !title.isEmpty()) ? title : getString(R.string.downloads);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_download)
-                .setContentTitle(displayTitle)
-                .setContentText(message != null ? message : getString(R.string.iptv_loading))
-                .setContentIntent(pi)
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW);
-
-        if (progress >= 0) {
-            builder.setProgress(100, progress, indeterminate);
-        }
-
-        return builder.build();
-    }
-
-    private synchronized void updateNotificationProgress(String title, long downloaded, long total) {
-        if (workers.isEmpty()) return;
-        int pct = (total > 0) ? (int) (downloaded * 100 / total) : 0;
-        String msg;
-        if (total > 0) {
-            msg = DownloadHelper.formatFileSize(downloaded) + " / " + DownloadHelper.formatFileSize(total) + " (" + pct + "%)";
-        } else if (downloaded > 0) {
-            msg = DownloadHelper.formatFileSize(downloaded);
-        } else {
-            msg = getString(R.string.iptv_loading);
-        }
-
-        Notification notif = buildForegroundNotification(title, msg, pct, total <= 0);
-        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) {
-            nm.notify(NOTIF_ID_FOREGROUND, notif);
-        }
-    }
-
-    private synchronized void updateNotificationMessage(String title, String message) {
-        if (workers.isEmpty()) return;
-        Notification notif = buildForegroundNotification(title, message, -1, true);
-        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) {
-            nm.notify(NOTIF_ID_FOREGROUND, notif);
-        }
-    }
-
-    private void showCompletionNotification(long id, String title, File targetFile) {
-        Intent intent = new Intent(this, PlayerActivity.class);
-        intent.putExtra("url", Uri.fromFile(targetFile).toString());
-        intent.putExtra("name", title);
-        PendingIntent pi = PendingIntent.getActivity(
-                this,
-                (int) (id % Integer.MAX_VALUE),
-                intent,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        Notification notif = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_check)
-                .setContentTitle(title)
-                .setContentText(getString(R.string.download_status_completed))
-                .setContentIntent(pi)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build();
-
-        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) {
-            nm.notify((int) (id % 100000 + 100), notif);
-        }
     }
 
     private void handleStartDownload(Intent intent) {
@@ -234,54 +119,52 @@ public class DownloadService extends Service {
             return;
         }
 
-        String rawTitle = intent.getStringExtra(EXTRA_TITLE);
+        String title = intent.getStringExtra(EXTRA_TITLE);
+        String format = intent.getStringExtra(EXTRA_FORMAT);
+        boolean audioOnly = intent.getBooleanExtra(EXTRA_AUDIO_ONLY, false);
         String iconUrl = intent.getStringExtra(EXTRA_ICON);
         long explicitId = intent.getLongExtra(EXTRA_ID, 0L);
 
-        String displayTitle = (rawTitle != null && !rawTitle.trim().isEmpty()) ? rawTitle.trim() : LinkStore.autoName(url);
-        String safeTitle = displayTitle.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
-        String ext = extractExtension(url);
-
-        File dir = getDownloadsDir();
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
         long id = (explicitId > 0) ? explicitId : System.currentTimeMillis();
-
-        // Check if worker already exists
-        if (workers.containsKey(id)) {
+        if (runningTasks.containsKey(id)) {
             return;
         }
 
-        File targetFile = new File(dir, safeTitle + "." + ext);
-        if (targetFile.exists() && explicitId <= 0) {
-            targetFile = new File(dir, safeTitle + "_" + id + "." + ext);
-        }
-        File partFile = new File(dir, id + "_" + safeTitle + ".part");
+        String displayTitle = (title != null && !title.trim().isEmpty()) ? title.trim() : "فيديو";
+        File dir = getDownloadsDir();
 
         DownloadStore.getInstance(this).addOrUpdate(
                 id,
                 displayTitle,
                 url,
-                Uri.fromFile(targetFile).toString(),
-                targetFile.getAbsolutePath(),
+                "",
+                new File(dir, sanitizeFilename(displayTitle) + (audioOnly ? ".m4a" : ".mp4")).getAbsolutePath(),
                 DownloadStore.STATUS_RUNNING,
                 0L,
                 iconUrl
         );
 
+        if (format != null && !format.isEmpty()) {
+            DownloadStore.getInstance(this).setMeta(id, "format", format);
+        }
+        DownloadStore.getInstance(this).setMeta(id, "audioOnly", String.valueOf(audioOnly));
+
         ensureForeground(displayTitle, getString(R.string.download_status_downloading, 0));
-        startWorker(id, displayTitle, url, iconUrl, targetFile, partFile);
+
+        DownloadTask task = new DownloadTask(id, displayTitle, url, format, audioOnly, iconUrl, dir);
+        runningTasks.put(id, task);
+        activeIds.add(id);
+        acquireWakeLock();
+        executor.execute(task);
     }
 
     private void handlePauseDownload(Intent intent) {
         long id = intent.getLongExtra(EXTRA_ID, 0L);
         if (id <= 0) return;
 
-        DownloadWorker worker = workers.remove(id);
-        if (worker != null) {
-            worker.pause();
+        DownloadTask task = runningTasks.remove(id);
+        if (task != null) {
+            task.cancelOrPause();
         }
         activeIds.remove(id);
 
@@ -305,7 +188,7 @@ public class DownloadService extends Service {
         long id = intent.getLongExtra(EXTRA_ID, 0L);
         if (id <= 0) return;
 
-        if (workers.containsKey(id)) {
+        if (runningTasks.containsKey(id)) {
             return;
         }
 
@@ -316,425 +199,395 @@ public class DownloadService extends Service {
         if (url == null || url.trim().isEmpty()) return;
 
         String title = obj.optString("title", "فيديو محمل");
+        String format = obj.optString("format", null);
+        boolean audioOnly = "true".equalsIgnoreCase(obj.optString("audioOnly", "false"));
         String iconUrl = obj.optString("iconUrl");
-        String filePath = obj.optString("filePath");
-
-        String safeTitle = title.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
-        File dir = getDownloadsDir();
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
-        File targetFile = (filePath != null && !filePath.isEmpty()) ? new File(filePath) : new File(dir, safeTitle + "." + extractExtension(url));
-        File partFile = new File(dir, id + "_" + safeTitle + ".part");
 
         ensureForeground(title, getString(R.string.download_status_downloading, 0));
-        startWorker(id, title, url, iconUrl, targetFile, partFile);
+
+        DownloadTask task = new DownloadTask(id, title, url, format, audioOnly, iconUrl, getDownloadsDir());
+        runningTasks.put(id, task);
+        activeIds.add(id);
+        acquireWakeLock();
+        executor.execute(task);
     }
 
     private void handleCancelDownload(Intent intent) {
         long id = intent.getLongExtra(EXTRA_ID, 0L);
         if (id <= 0) return;
 
-        DownloadWorker worker = workers.remove(id);
-        if (worker != null) {
-            worker.cancel();
+        DownloadTask task = runningTasks.remove(id);
+        if (task != null) {
+            task.cancelOrPause();
         }
         activeIds.remove(id);
-
-        JSONObject obj = DownloadStore.getInstance(this).get(id);
-        String title = (obj != null) ? obj.optString("title", "") : "";
-        String safeTitle = title.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
-        File dir = getDownloadsDir();
-        File partFile = new File(dir, id + "_" + safeTitle + ".part");
-        if (partFile.exists()) {
-            partFile.delete();
-        }
 
         DownloadStore.getInstance(this).delete(id);
         checkStopService();
     }
 
-    private void startWorker(long id, String title, String url, String iconUrl, File targetFile, File partFile) {
-        DownloadWorker worker = new DownloadWorker(id, title, url, iconUrl, targetFile, partFile);
-        workers.put(id, worker);
-        activeIds.add(id);
-        acquireWakeLock();
-        executor.execute(worker);
-    }
-
-    private synchronized void checkStopService() {
-        if (workers.isEmpty()) {
-            if (isForegroundStarted) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    stopForeground(STOP_FOREGROUND_REMOVE);
-                } else {
-                    stopForeground(true);
-                }
-                isForegroundStarted = false;
-            }
-            releaseWakeLock();
-            stopSelf();
-        }
-    }
-
-    private synchronized void acquireWakeLock() {
-        if (wakeLock == null) {
-            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-            if (pm != null) {
-                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyPlyr:DownloadWakeLock");
-                wakeLock.setReferenceCounted(false);
-            }
-        }
-        if (wakeLock != null && !wakeLock.isHeld()) {
-            wakeLock.acquire(15 * 60 * 1000L); // 15 min safety timeout
-        }
-    }
-
-    private synchronized void releaseWakeLock() {
-        if (wakeLock != null && wakeLock.isHeld()) {
-            try {
-                wakeLock.release();
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
-    private void registerNetworkCallback() {
-        try {
-            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            if (cm != null && networkCallback == null) {
-                NetworkRequest request = new NetworkRequest.Builder()
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                        .build();
-                networkCallback = new ConnectivityManager.NetworkCallback() {
-                    @Override
-                    public void onAvailable(@NonNull Network network) {
-                        for (DownloadWorker worker : workers.values()) {
-                            synchronized (worker.retryLock) {
-                                worker.retryLock.notifyAll();
-                            }
-                        }
-                    }
-                };
-                cm.registerNetworkCallback(request, networkCallback);
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void unregisterNetworkCallback() {
-        try {
-            if (networkCallback != null) {
-                ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                if (cm != null) {
-                    cm.unregisterNetworkCallback(networkCallback);
-                }
-                networkCallback = null;
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    private File getDownloadsDir() {
-        File base = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-        if (base == null) {
-            base = getFilesDir();
-        }
-        return new File(base, "MyPlyr");
-    }
-
-    private static String extractExtension(String url) {
-        String ext = "mp4";
-        try {
-            Uri parsed = Uri.parse(url);
-            String path = parsed.getLastPathSegment();
-            if (path != null && path.contains(".")) {
-                int dot = path.lastIndexOf('.');
-                String e = path.substring(dot + 1).toLowerCase();
-                if (e.length() <= 4 && !e.contains("/")) {
-                    ext = e;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return ext;
-    }
-
-    private static void copyFile(File src, File dst) throws IOException {
-        try (InputStream in = new java.io.FileInputStream(src);
-             OutputStream out = new FileOutputStream(dst)) {
-            byte[] buf = new byte[32768];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-        }
-    }
-
-    private class DownloadWorker implements Runnable {
+    private class DownloadTask implements Runnable {
         private final long id;
         private final String title;
         private final String url;
+        private final String format;
+        private final boolean audioOnly;
         private final String iconUrl;
-        private final File targetFile;
-        private final File partFile;
-        private volatile boolean isPaused = false;
+        private final File dir;
+        private final String procId;
         private volatile boolean isCancelled = false;
-        final Object retryLock = new Object();
+        private long lastProgressUpdate = 0L;
 
-        DownloadWorker(long id, String title, String url, String iconUrl, File targetFile, File partFile) {
+        DownloadTask(long id, String title, String url, String format, boolean audioOnly, String iconUrl, File dir) {
             this.id = id;
             this.title = title;
             this.url = url;
+            this.format = format;
+            this.audioOnly = audioOnly;
             this.iconUrl = iconUrl;
-            this.targetFile = targetFile;
-            this.partFile = partFile;
+            this.dir = dir;
+            this.procId = "dl_" + id;
         }
 
-        void pause() {
-            isPaused = true;
-            synchronized (retryLock) {
-                retryLock.notifyAll();
-            }
-        }
-
-        void cancel() {
+        public void cancelOrPause() {
             isCancelled = true;
-            synchronized (retryLock) {
-                retryLock.notifyAll();
+            try {
+                YoutubeDL.getInstance().destroyProcessById(procId);
+            } catch (Exception ignored) {
             }
         }
 
         @Override
         public void run() {
-            int retryDelayIndex = 0;
-            final int[] retryDelays = {3000, 5000, 10000, 30000};
-
             try {
-                while (!isPaused && !isCancelled) {
-                    long offset = (partFile.exists()) ? partFile.length() : 0L;
-                    HttpURLConnection conn = null;
-                    InputStream in = null;
-                    FileOutputStream out = null;
-                    boolean downloadCompleted = false;
+                if (isCancelled) return;
 
-                    try {
-                        updateNotificationProgress(title, offset, -1);
-                        URL requestUrl = new URL(url);
-                        conn = openConnectionWithRedirects(requestUrl, offset);
-
-                        int code = conn.getResponseCode();
-                        long totalBytes = -1;
-                        boolean append = false;
-
-                        if (code == HttpURLConnection.HTTP_PARTIAL) { // 206
-                            append = true;
-                            String contentRange = conn.getHeaderField("Content-Range");
-                            if (contentRange != null && contentRange.contains("/")) {
-                                try {
-                                    String totalStr = contentRange.substring(contentRange.lastIndexOf('/') + 1).trim();
-                                    totalBytes = Long.parseLong(totalStr);
-                                } catch (Exception ignored) {
-                                }
-                            }
-                            if (totalBytes <= 0) {
-                                long cl = conn.getContentLengthLong();
-                                if (cl > 0) totalBytes = offset + cl;
-                            }
-                        } else if (code == HttpURLConnection.HTTP_OK) { // 200
-                            offset = 0;
-                            append = false;
-                            totalBytes = conn.getContentLengthLong();
-                        } else if (code == 416) { // Range Not Satisfiable
-                            if (offset > 0) {
-                                if (partFile.exists()) partFile.delete();
-                                offset = 0;
-                                continue;
-                            } else {
-                                throw new IOException("HTTP 416 Range Not Satisfiable");
-                            }
-                        } else {
-                            throw new IOException("HTTP error response: " + code);
-                        }
-
-                        if (totalBytes <= 0) {
-                            JSONObject st = DownloadStore.getInstance(DownloadService.this).get(id);
-                            if (st != null) {
-                                totalBytes = st.optLong("totalBytes", 0);
-                            }
-                        }
-
-                        DownloadStore.getInstance(DownloadService.this).updateProgress(
-                                id,
-                                DownloadStore.STATUS_RUNNING,
-                                offset,
-                                totalBytes,
-                                Uri.fromFile(targetFile).toString(),
-                                targetFile.getAbsolutePath()
-                        );
-
-                        in = conn.getInputStream();
-                        out = new FileOutputStream(partFile, append);
-                        byte[] buffer = new byte[32768];
-                        long downloadedBytes = offset;
-                        long lastProgressTime = System.currentTimeMillis();
-
-                        // Reset retry backoff upon successful read stream start
-                        retryDelayIndex = 0;
-
-                        while (!isPaused && !isCancelled) {
-                            int read = in.read(buffer);
-                            if (read == -1) {
-                                break;
-                            }
-                            out.write(buffer, 0, read);
-                            downloadedBytes += read;
-
-                            long now = System.currentTimeMillis();
-                            if (now - lastProgressTime >= 1000) {
-                                lastProgressTime = now;
-                                DownloadStore.getInstance(DownloadService.this).updateProgress(
-                                        id,
-                                        DownloadStore.STATUS_RUNNING,
-                                        downloadedBytes,
-                                        totalBytes,
-                                        Uri.fromFile(targetFile).toString(),
-                                        targetFile.getAbsolutePath()
-                                );
-                                updateNotificationProgress(title, downloadedBytes, totalBytes);
-                            }
-                        }
-                        out.flush();
-
-                        if (isPaused || isCancelled) {
-                            break;
-                        }
-
-                        if (totalBytes > 0 && downloadedBytes < totalBytes) {
-                            throw new IOException("Incomplete download stream: " + downloadedBytes + " / " + totalBytes);
-                        }
-
-                        downloadCompleted = true;
-
-                    } catch (IOException e) {
-                        if (isPaused || isCancelled) {
-                            break;
-                        }
-
-                        long currentBytes = partFile.exists() ? partFile.length() : 0L;
-                        DownloadStore.getInstance(DownloadService.this).updateProgress(
-                                id,
-                                DownloadStore.STATUS_PAUSED,
-                                currentBytes,
-                                -1,
-                                Uri.fromFile(targetFile).toString(),
-                                targetFile.getAbsolutePath()
-                        );
-
-                        updateNotificationMessage(title, getString(R.string.download_waiting_network));
-
-                        int delay = retryDelays[Math.min(retryDelayIndex, retryDelays.length - 1)];
-                        if (retryDelayIndex < retryDelays.length - 1) {
-                            retryDelayIndex++;
-                        }
-
-                        synchronized (retryLock) {
-                            try {
-                                retryLock.wait(delay);
-                            } catch (InterruptedException ie) {
-                                // Interrupted on network available or user pause/cancel
-                            }
-                        }
-                    } finally {
-                        try {
-                            if (in != null) in.close();
-                        } catch (Exception ignored) {
-                        }
-                        try {
-                            if (out != null) out.close();
-                        } catch (Exception ignored) {
-                        }
-                        if (conn != null) conn.disconnect();
-                    }
-
-                    if (downloadCompleted) {
-                        if (targetFile.exists()) {
-                            targetFile.delete();
-                        }
-                        boolean renamed = partFile.renameTo(targetFile);
-                        if (!renamed) {
-                            try {
-                                copyFile(partFile, targetFile);
-                                partFile.delete();
-                            } catch (Exception ignored) {
-                            }
-                        }
-
-                        long finalSize = targetFile.exists() ? targetFile.length() : 0L;
-                        DownloadStore.getInstance(DownloadService.this).updateProgress(
-                                id,
-                                DownloadStore.STATUS_SUCCESSFUL,
-                                finalSize,
-                                finalSize,
-                                Uri.fromFile(targetFile).toString(),
-                                targetFile.getAbsolutePath()
-                        );
-                        showCompletionNotification(id, title, targetFile);
-                        break;
+                boolean success = executeDownload(false);
+                if (!success && !isCancelled) {
+                    Log.w(TAG, "Download attempt 1 failed. Updating yt-dlp binary from GitHub and retrying...");
+                    YtdlpUpdater.updateSync(DownloadService.this);
+                    if (!isCancelled) {
+                        executeDownload(true);
                     }
                 }
-
-                if (isCancelled) {
-                    if (partFile.exists()) partFile.delete();
-                    DownloadStore.getInstance(DownloadService.this).delete(id);
-                } else if (isPaused) {
-                    long currentBytes = partFile.exists() ? partFile.length() : 0L;
-                    DownloadStore.getInstance(DownloadService.this).updateProgress(
-                            id,
-                            DownloadStore.STATUS_PAUSED,
-                            currentBytes,
-                            -1,
-                            Uri.fromFile(targetFile).toString(),
-                            targetFile.getAbsolutePath()
-                    );
-                }
-
             } finally {
                 activeIds.remove(id);
-                workers.remove(id);
+                runningTasks.remove(id);
                 releaseWakeLock();
                 checkStopService();
             }
         }
 
-        private HttpURLConnection openConnectionWithRedirects(URL initialUrl, long offset) throws IOException {
-            URL currentUrl = initialUrl;
-            for (int redirects = 0; redirects < 5; redirects++) {
-                HttpURLConnection conn = (HttpURLConnection) currentUrl.openConnection();
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(15000);
-                conn.setRequestProperty("User-Agent", USER_AGENT);
-                conn.setInstanceFollowRedirects(false);
+        private boolean executeDownload(boolean isRetry) {
+            try {
+                if (isCancelled) return false;
 
-                if (offset > 0) {
-                    conn.setRequestProperty("Range", "bytes=" + offset + "-");
+                try {
+                    YoutubeDL.getInstance().init(getApplicationContext());
+                } catch (Exception ignored) {
                 }
 
-                conn.connect();
-                int code = conn.getResponseCode();
-                if (code == HttpURLConnection.HTTP_MOVED_PERM || code == HttpURLConnection.HTTP_MOVED_TEMP
-                        || code == HttpURLConnection.HTTP_SEE_OTHER || code == 307 || code == 308) {
-                    String location = conn.getHeaderField("Location");
-                    conn.disconnect();
-                    if (location != null) {
-                        currentUrl = new URL(currentUrl, location);
-                        continue;
+                String safeTitle = sanitizeFilename(title);
+                String template = dir.getAbsolutePath() + "/" + safeTitle + " [" + id + "].%(ext)s";
+
+                YoutubeDLRequest req = new YoutubeDLRequest(url);
+                req.addOption("-o", template);
+                req.addOption("--no-mtime");
+                req.addOption("--no-playlist");
+                req.addOption("--newline");
+                req.addOption("--continue");
+                req.addOption("--no-update");
+                req.addOption("--ignore-errors");
+                req.addOption("--extractor-args", "youtube:player_client=ios,web,mweb,android");
+                req.addOption("--concurrent-fragments", "4");
+
+                if (audioOnly) {
+                    req.addOption("-f", "bestaudio[ext=m4a]/bestaudio/best");
+                    req.addOption("-x");
+                    req.addOption("--audio-format", "m4a");
+                    req.addOption("--embed-metadata");
+                } else if (format != null && !format.isEmpty()) {
+                    req.addOption("-f", format + "+bestaudio/best/" + format);
+                    req.addOption("--merge-output-format", "mp4");
+                } else {
+                    // Universal best video (up to 4K) + best audio merged to MP4 via bundled ffmpeg
+                    req.addOption("-f", "(bestvideo[ext=mp4][height<=2160]+bestaudio[ext=m4a])/(bestvideo+bestaudio)/best");
+                    req.addOption("--merge-output-format", "mp4");
+                }
+
+                Log.d(TAG, "Starting yt-dlp download (retry=" + isRetry + "): " + url + " [procId=" + procId + "]");
+
+                YoutubeDLResponse resp = YoutubeDL.getInstance().execute(req, procId, new Function3<Float, Long, String, Unit>() {
+                    @Override
+                    public Unit invoke(Float progress, Long eta, String line) {
+                        if (isCancelled) return Unit.INSTANCE;
+
+                        long now = System.currentTimeMillis();
+                        if (now - lastProgressUpdate >= 500) {
+                            lastProgressUpdate = now;
+                            int p = (progress != null) ? Math.round(progress) : 0;
+                            p = Math.max(0, Math.min(100, p));
+
+                            updateNotificationProgress(title, p);
+
+                            DownloadStore.getInstance(DownloadService.this).updateProgress(
+                                    id,
+                                    DownloadStore.STATUS_RUNNING,
+                                    p,
+                                    100L,
+                                    "",
+                                    ""
+                            );
+                        }
+                        return Unit.INSTANCE;
                     }
+                });
+
+                if (isCancelled) return false;
+
+                // Find the downloaded file
+                File outputFile = findOutputFile(dir, id, safeTitle);
+                if (outputFile != null && outputFile.exists() && outputFile.length() > 0) {
+                    long size = outputFile.length();
+                    String finalPath = outputFile.getAbsolutePath();
+                    Uri uri = Uri.fromFile(outputFile);
+
+                    DownloadStore.getInstance(DownloadService.this).updateProgress(
+                            id,
+                            DownloadStore.STATUS_SUCCESSFUL,
+                            size,
+                            size,
+                            uri.toString(),
+                            finalPath
+                    );
+                    DownloadStore.getInstance(DownloadService.this).setMeta(id, "error", null);
+
+                    // Scan file so it appears immediately in the gallery and player
+                    MediaScannerConnection.scanFile(DownloadService.this,
+                            new String[]{finalPath}, null, null);
+
+                    showCompletionNotification(id, title, outputFile);
+                    Log.i(TAG, "Download completed successfully: " + finalPath + " (" + size + " bytes)");
+                    return true;
+                } else if (isRetry) {
+                    fail("تعذر العثور على الملف المحمل");
                 }
-                return conn;
+                return false;
+
+            } catch (YoutubeDL.CanceledException e) {
+                Log.d(TAG, "Download canceled or paused: " + id);
+                return true;
+            } catch (Exception e) {
+                Log.e(TAG, "Download failed (retry=" + isRetry + "): " + e.getMessage(), e);
+                if (isRetry) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "خطأ غير معروف";
+                    if (msg.contains("Sign in")) {
+                        msg = "الفيديو يتطلب تسجيل الدخول أو تأكيد العمر";
+                    }
+                    fail(msg);
+                }
+                return false;
             }
-            throw new IOException("Too many redirects");
+        }
+
+        private void fail(String errorMsg) {
+            if (isCancelled) {
+                DownloadStore.getInstance(DownloadService.this).delete(id);
+                return;
+            }
+            DownloadStore.getInstance(DownloadService.this).updateProgress(
+                    id,
+                    DownloadStore.STATUS_FAILED,
+                    0L,
+                    0L,
+                    "",
+                    ""
+            );
+            DownloadStore.getInstance(DownloadService.this).setMeta(id, "error", errorMsg);
+            updateNotificationMessage(title, errorMsg);
+        }
+    }
+
+    private File findOutputFile(File dir, long id, String safeTitle) {
+        String idTag = "[" + id + "]";
+        File[] files = dir.listFiles();
+        if (files == null) return null;
+
+        // 1. Look for exact ID tag match
+        for (File f : files) {
+            if (f.isFile() && f.getName().contains(idTag) && !f.getName().endsWith(".part") && !f.getName().endsWith(".ytdl")) {
+                return f;
+            }
+        }
+
+        // 2. Look for safeTitle match
+        for (File f : files) {
+            if (f.isFile() && f.getName().startsWith(safeTitle) && !f.getName().endsWith(".part") && !f.getName().endsWith(".ytdl")) {
+                return f;
+            }
+        }
+
+        return null;
+    }
+
+    private File getDownloadsDir() {
+        File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "MyPlyr");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
+
+    private static String sanitizeFilename(String name) {
+        if (name == null) return "video";
+        return name.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+    }
+
+    private synchronized void acquireWakeLock() {
+        if (wakeLock == null) {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (pm != null) {
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyPlyr:DownloadWakeLock");
+                wakeLock.acquire(45 * 60 * 1000L); // 45 min timeout
+            }
+        }
+    }
+
+    private synchronized void releaseWakeLock() {
+        if (runningTasks.isEmpty() && wakeLock != null && wakeLock.isHeld()) {
+            try {
+                wakeLock.release();
+            } catch (Exception ignored) {
+            }
+            wakeLock = null;
+        }
+    }
+
+    private void checkStopService() {
+        if (runningTasks.isEmpty()) {
+            stopForeground(true);
+            isForegroundStarted = false;
+            stopSelf();
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    getString(R.string.download_channel_name),
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            channel.setDescription(getString(R.string.download_channel_desc));
+            channel.enableVibration(false);
+            channel.setSound(null, null);
+
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (nm != null) {
+                nm.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void ensureForeground(String title, String content) {
+        Intent intent = new Intent(this, DownloadsActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Notification notif = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(content)
+                .setSmallIcon(R.drawable.ic_download)
+                .setContentIntent(pi)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .build();
+
+        if (!isForegroundStarted) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(NOTIF_ID_FOREGROUND, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+                } else {
+                    startForeground(NOTIF_ID_FOREGROUND, notif);
+                }
+                isForegroundStarted = true;
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to start foreground notification", e);
+            }
+        } else {
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (nm != null) {
+                nm.notify(NOTIF_ID_FOREGROUND, notif);
+            }
+        }
+    }
+
+    private void updateNotificationProgress(String title, int progress) {
+        Intent intent = new Intent(this, DownloadsActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(progress > 0 ? getString(R.string.download_status_downloading, progress) : "جاري التحميل...")
+                .setSmallIcon(R.drawable.ic_download)
+                .setContentIntent(pi)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setProgress(100, progress, progress <= 0);
+
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (nm != null) {
+            nm.notify(NOTIF_ID_FOREGROUND, builder.build());
+        }
+    }
+
+    private void updateNotificationMessage(String title, String message) {
+        Intent intent = new Intent(this, DownloadsActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setSmallIcon(R.drawable.ic_download)
+                .setContentIntent(pi)
+                .setOngoing(false)
+                .setAutoCancel(true);
+
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (nm != null) {
+            nm.notify((int) System.currentTimeMillis(), builder.build());
+        }
+    }
+
+    private void showCompletionNotification(long id, String title, File file) {
+        Intent playIntent = new Intent(this, PlayerActivity.class);
+        playIntent.putExtra("url", Uri.fromFile(file).toString());
+        playIntent.putExtra("name", title);
+
+        PendingIntent pi = PendingIntent.getActivity(
+                this, (int) id, playIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Notification notif = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(getString(R.string.download_completed))
+                .setSmallIcon(R.drawable.ic_download)
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build();
+
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (nm != null) {
+            nm.notify((int) (id & 0x7FFFFFFF), notif);
         }
     }
 }

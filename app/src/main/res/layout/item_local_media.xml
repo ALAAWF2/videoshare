@@ -11,110 +11,128 @@
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/card"
-    app:cardCornerRadius="12dp"
+    app:cardCornerRadius="14dp"
     app:cardElevation="1dp"
-    app:strokeWidth="0dp">
+    app:strokeColor="@color/glass_stroke"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="10dp">
+        android:orientation="vertical">
 
-        <!-- Thumbnail Container with Duration Overlay -->
-        <FrameLayout
-            android:layout_width="64dp"
-            android:layout_height="50dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="10dp">
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:cardBackgroundColor="#21262D"
-                app:cardCornerRadius="8dp"
-                app:strokeWidth="0dp">
+            <!-- Thumbnail Container with Duration Overlay -->
+            <FrameLayout
+                android:layout_width="68dp"
+                android:layout_height="52dp">
 
-                <ImageView
-                    android:id="@+id/iv_thumbnail"
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_video" />
+                    app:cardBackgroundColor="#21262D"
+                    app:cardCornerRadius="10dp"
+                    app:strokeWidth="0dp">
 
-            </com.google.android.material.card.MaterialCardView>
+                    <ImageView
+                        android:id="@+id/iv_thumbnail"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_video" />
 
-            <!-- Duration Badge -->
-            <TextView
-                android:id="@+id/tv_duration"
-                android:layout_width="wrap_content"
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Duration Badge -->
+                <TextView
+                    android:id="@+id/tv_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="3dp"
+                    android:background="#D9000000"
+                    android:paddingStart="4dp"
+                    android:paddingTop="1dp"
+                    android:paddingEnd="4dp"
+                    android:paddingBottom="1dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+            <!-- Title & Subtitle Info -->
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="2dp"
-                android:background="#D9000000"
-                android:paddingStart="4dp"
-                android:paddingTop="1dp"
-                android:paddingEnd="4dp"
-                android:paddingBottom="1dp"
-                android:textColor="#FFFFFF"
-                android:textSize="9sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-        </FrameLayout>
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="@color/text"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
-        <!-- Title & Subtitle Info -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+                <TextView
+                    android:id="@+id/tv_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/dim"
+                    android:textSize="12sp" />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:textColor="@color/text"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+            <!-- Share Button -->
+            <ImageButton
+                android:id="@+id/btn_share"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_share"
+                app:tint="@color/dim" />
 
-            <TextView
-                android:id="@+id/tv_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="@color/dim"
-                android:textSize="12sp" />
+            <!-- Play Button -->
+            <ImageButton
+                android:id="@+id/btn_play"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_play"
+                app:tint="@color/accent" />
+
         </LinearLayout>
 
-        <!-- Share Button -->
-        <ImageButton
-            android:id="@+id/btn_share"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="6dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_share"
-            app:tint="@color/dim" />
-
-        <!-- Play Button -->
-        <ImageButton
-            android:id="@+id/btn_play"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="4dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="6dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_play"
-            app:tint="@color/accent" />
+        <!-- Watched Progress Bar -->
+        <ProgressBar
+            android:id="@+id/pb_watched"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:max="1000"
+            android:progressBackgroundTint="@color/progress_bg"
+            android:progressTint="@color/accent"
+            android:visibility="gone" />
 
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

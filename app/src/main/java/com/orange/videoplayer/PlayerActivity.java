@@ -76,6 +76,7 @@ public class PlayerActivity extends AppCompatActivity {
     private boolean isLongPressActive = false;
     private boolean isUserSeeking = false;
     private boolean isControlsVisible = true;
+    private boolean isApplyingRemoteSync = false;
     private String currentUrl = null;
     private boolean directRetryAttempted = false;
 
@@ -85,6 +86,7 @@ public class PlayerActivity extends AppCompatActivity {
     private MaterialToolbar toolbar;
     private TextView tvPosition;
     private TextView tvDuration;
+    private TextView tvPreviewBubble;
     private SeekBar seekBar;
     private ImageButton btnPlayPause;
     private MaterialButton btnSpeed;
@@ -122,9 +124,14 @@ public class PlayerActivity extends AppCompatActivity {
 
     private JSONObject nextCandidate = null;
     private long sleepTimerEndTimeMs = 0L;
-
     private MediaSession mediaSession;
     private BroadcastReceiver pipReceiver;
+
+    private long hostBasePositionMs = 0L;
+    private long hostBaseLocalTimeMs = 0L;
+    private boolean hostStateIsPlaying = false;
+    private long lastResyncRequestTime = 0L;
+    private long bufferingStartTime = 0L;
 
     private final Handler saveHandler = new Handler(Looper.getMainLooper());
     private final Runnable saveTask = new Runnable() {
@@ -141,6 +148,38 @@ public class PlayerActivity extends AppCompatActivity {
         @Override
         public void run() {
             updateProgress();
+
+            // Local monotonic drift correction for Guest (Zero network traffic)
+            if (partyManager.isPartyActive() && !partyManager.isHost() && player != null && player.getPlaybackState() == Player.STATE_READY) {
+                long nowMonotonic = SystemClock.elapsedRealtime();
+                long expectedHostPos = hostStateIsPlaying
+                        ? (hostBasePositionMs + (nowMonotonic - hostBaseLocalTimeMs))
+                        : hostBasePositionMs;
+                long currentPos = player.getCurrentPosition();
+                long drift = currentPos - expectedHostPos;
+                long absDrift = Math.abs(drift);
+
+                if (absDrift <= 250) {
+                    player.setPlaybackSpeed(currentPlaybackSpeed);
+                } else if (absDrift <= 1200) {
+                    if (drift > 0) {
+                        player.setPlaybackSpeed(currentPlaybackSpeed * 0.96f);
+                    } else {
+                        player.setPlaybackSpeed(currentPlaybackSpeed * 1.04f);
+                    }
+                } else if (absDrift <= 5000) {
+                    player.seekTo(expectedHostPos);
+                    player.setPlaybackSpeed(currentPlaybackSpeed);
+                } else {
+                    player.seekTo(expectedHostPos);
+                    player.setPlaybackSpeed(currentPlaybackSpeed);
+                    if (nowMonotonic - lastResyncRequestTime > 5000) {
+                        lastResyncRequestTime = nowMonotonic;
+                        partyManager.requestSync();
+                    }
+                }
+            }
+
             progressHandler.postDelayed(this, 250);
         }
     };
@@ -208,6 +247,8 @@ public class PlayerActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        settingsStore = new SettingsStore(this);
+        setTheme(settingsStore.getThemeResId());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -216,7 +257,6 @@ public class PlayerActivity extends AppCompatActivity {
         applyFullscreen();
 
         store = new LinkStore(this);
-        settingsStore = new SettingsStore(this);
         touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
@@ -277,6 +317,7 @@ public class PlayerActivity extends AppCompatActivity {
         touchOverlay = findViewById(R.id.touch_overlay);
         tvPosition = findViewById(R.id.tv_position);
         tvDuration = findViewById(R.id.tv_duration);
+        tvPreviewBubble = findViewById(R.id.tv_preview_bubble);
         seekBar = findViewById(R.id.seek_bar);
         btnPlayPause = findViewById(R.id.btn_play_pause);
         btnSpeed = findViewById(R.id.btn_speed);
@@ -383,7 +424,18 @@ public class PlayerActivity extends AppCompatActivity {
                     long dur = player.getDuration();
                     if (dur > 0) {
                         long pos = (long) (progress * (double) dur / 1000.0);
-                        tvPosition.setText(formatTime(pos));
+                        String timeStr = formatTime(pos);
+                        tvPosition.setText(timeStr);
+                        if (tvPreviewBubble != null) {
+                            tvPreviewBubble.setText(timeStr);
+                            tvPreviewBubble.setVisibility(View.VISIBLE);
+                            int availableWidth = sb.getWidth() - sb.getPaddingStart() - sb.getPaddingEnd();
+                            if (availableWidth > 0) {
+                                float ratio = (float) progress / sb.getMax();
+                                float targetX = sb.getPaddingStart() + (ratio * availableWidth) - (tvPreviewBubble.getWidth() / 2f);
+                                tvPreviewBubble.setTranslationX(Math.max(0, targetX));
+                            }
+                        }
                     }
                     resetAutoHideControls();
                 }
@@ -393,6 +445,9 @@ public class PlayerActivity extends AppCompatActivity {
             public void onStartTrackingTouch(SeekBar sb) {
                 isUserSeeking = true;
                 cancelAutoHideControls();
+                if (tvPreviewBubble != null) {
+                    tvPreviewBubble.setVisibility(View.VISIBLE);
+                }
             }
 
             @Override
@@ -404,6 +459,9 @@ public class PlayerActivity extends AppCompatActivity {
                         player.seekTo(targetPos);
                         tvPosition.setText(formatTime(targetPos));
                     }
+                }
+                if (tvPreviewBubble != null) {
+                    tvPreviewBubble.setVisibility(View.GONE);
                 }
                 isUserSeeking = false;
                 scheduleAutoHideControls();
@@ -876,14 +934,14 @@ public class PlayerActivity extends AppCompatActivity {
                 } else {
                     cancelAutoHideControls();
                 }
-                if (partyManager.isPartyActive() && partyManager.isHost() && player != null) {
+                if (!isApplyingRemoteSync && partyManager.isPartyActive() && partyManager.isHost() && player != null) {
                     partyManager.broadcastSync(player.getCurrentPosition(), isPlaying);
                 }
             }
 
             @Override
             public void onPositionDiscontinuity(@NonNull Player.PositionInfo oldPosition, @NonNull Player.PositionInfo newPosition, int reason) {
-                if (partyManager.isPartyActive() && partyManager.isHost() && player != null) {
+                if (!isApplyingRemoteSync && partyManager.isPartyActive() && partyManager.isHost() && player != null) {
                     partyManager.broadcastSync(player.getCurrentPosition(), player.isPlaying());
                 }
             }
@@ -895,7 +953,15 @@ public class PlayerActivity extends AppCompatActivity {
                     if (dur > 0 && entryId > 0) store.updatePosition(entryId, dur, dur);
                     updatePlayPauseButton(false);
                     showControls();
+                } else if (playbackState == Player.STATE_BUFFERING) {
+                    bufferingStartTime = SystemClock.elapsedRealtime();
                 } else if (playbackState == Player.STATE_READY) {
+                    if (bufferingStartTime > 0 && (SystemClock.elapsedRealtime() - bufferingStartTime > 2500)) {
+                        if (partyManager.isPartyActive() && !partyManager.isHost()) {
+                            partyManager.requestSync();
+                        }
+                    }
+                    bufferingStartTime = 0L;
                     if (layoutErrorPanel != null) layoutErrorPanel.setVisibility(View.GONE);
                     updateProgress();
                 }
@@ -1135,6 +1201,9 @@ public class PlayerActivity extends AppCompatActivity {
                 sleepTimerHandler.post(sleepTimerRunnable);
             }
         }
+        if (partyManager.isPartyActive() && !partyManager.isHost()) {
+            partyManager.requestSync();
+        }
         updateNextCandidate();
     }
 
@@ -1217,17 +1286,38 @@ public class PlayerActivity extends AppCompatActivity {
     private void setupWatchPartyListener() {
         partyManager.setListener(new WatchPartyManager.Listener() {
             @Override
-            public void onSyncReceived(long targetPosMs, boolean isPlaying) {
+            public void onSyncReceived(long targetPosMs, boolean isPlaying, long seq) {
                 if (player != null && !partyManager.isHost()) {
-                    long current = player.getCurrentPosition();
-                    if (Math.abs(current - targetPosMs) > 1500) {
-                        player.seekTo(targetPosMs);
+                    hostBasePositionMs = targetPosMs;
+                    hostBaseLocalTimeMs = SystemClock.elapsedRealtime();
+                    hostStateIsPlaying = isPlaying;
+
+                    isApplyingRemoteSync = true;
+                    try {
+                        long current = player.getCurrentPosition();
+                        long diff = Math.abs(current - targetPosMs);
+
+                        // If difference is large or stopped, seek immediately
+                        if (diff > 1200 || player.getPlaybackState() == Player.STATE_ENDED) {
+                            player.seekTo(targetPosMs);
+                            player.setPlaybackSpeed(currentPlaybackSpeed);
+                        }
+
+                        if (isPlaying && !player.isPlaying()) {
+                            player.play();
+                        } else if (!isPlaying && player.isPlaying()) {
+                            player.pause();
+                        }
+                    } finally {
+                        isApplyingRemoteSync = false;
                     }
-                    if (isPlaying && !player.isPlaying()) {
-                        player.play();
-                    } else if (!isPlaying && player.isPlaying()) {
-                        player.pause();
-                    }
+                }
+            }
+
+            @Override
+            public void onSyncRequested() {
+                if (partyManager.isHost() && player != null) {
+                    partyManager.broadcastSync(player.getCurrentPosition(), player.isPlaying());
                 }
             }
 

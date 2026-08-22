@@ -1,11 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#0D1117</color>
-    <color name="card">#1A2029</color>
+    <!-- Core Dark Theme -->
+    <color name="bg">#090D16</color>
+    <color name="card">#141B2D</color>
+    <color name="card_elevated">#1C253B</color>
     <color name="text">#E6EDF3</color>
     <color name="dim">#8B949E</color>
     <color name="accent">#FF6D2E</color>
-    <color name="progress_bg">#2A313A</color>
+    <color name="accent_light">#FF8F50</color>
+    <color name="accent_glow">#66FF6D2E</color>
+    
+    <!-- Progress & Badges -->
+    <color name="progress_bg">#212836</color>
+    <color name="progress_fill">#FF6D2E</color>
+    <color name="badge_bg">#252F44</color>
+    <color name="badge_text">#A5B4FC</color>
+
+    <!-- Glassmorphism Overlays -->
+    <color name="glass_bg">#D90F172A</color>
+    <color name="glass_card">#B31E293B</color>
+    <color name="glass_pill">#80334155</color>
+    <color name="glass_stroke">#33FFFFFF</color>
+    <color name="glass_nav">#E6090D16</color>
+    
+    <!-- AMOLED Pure Black Theme -->
+    <color name="amoled_bg">#000000</color>
+    <color name="amoled_card">#121212</color>
+    <color name="amoled_stroke">#242424</color>
+
+    <!-- Theme Accents -->
+    <color name="theme_cyberpunk">#A855F7</color>
+    <color name="theme_ocean">#0284C7</color>
+    <color name="theme_emerald">#10B981</color>
+    <color name="theme_sunset">#FF6D2E</color>
+
+    <!-- Status Colors -->
     <color name="status_ok_text">#3FB950</color>
     <color name="status_ok_bg">#1A3A2A</color>
     <color name="status_blocked_text">#F85149</color>

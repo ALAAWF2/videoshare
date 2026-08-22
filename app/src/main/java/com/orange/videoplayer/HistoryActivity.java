@@ -25,6 +25,8 @@ public class HistoryActivity extends AppCompatActivity implements HistoryAdapter
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SettingsStore settingsStore = new SettingsStore(this);
+        setTheme(settingsStore.getThemeResId());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
 

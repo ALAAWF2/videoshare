@@ -44,6 +44,8 @@ public class DownloadsActivity extends AppCompatActivity implements DownloadAdap
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SettingsStore settingsStore = new SettingsStore(this);
+        setTheme(settingsStore.getThemeResId());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_downloads);
 
@@ -192,9 +194,13 @@ public class DownloadsActivity extends AppCompatActivity implements DownloadAdap
                 getString(R.string.download_resume),
                 getString(R.string.delete)
         };
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(title)
-                .setItems(options, (dialog, which) -> {
+        String errorText = item.optString("error");
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
+                .setTitle(title);
+        if (errorText != null && !errorText.trim().isEmpty()) {
+            builder.setMessage("⚠️ " + errorText.trim());
+        }
+        builder.setItems(options, (dialog, which) -> {
                     if (which == 0) {
                         DownloadHelper.resumeDownload(this, downloadId);
                         refreshList();

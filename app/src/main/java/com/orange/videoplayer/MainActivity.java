@@ -28,11 +28,15 @@ import java.util.regex.Pattern;
 public class MainActivity extends AppCompatActivity implements LinkAdapter.Listener {
 
     private LinkStore store;
+    private SettingsStore settingsStore;
     private TextView emptyView;
     private RecyclerView recycler;
+    private com.google.android.material.bottomnavigation.BottomNavigationView bottomNav;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        settingsStore = new SettingsStore(this);
+        setTheme(settingsStore.getThemeResId());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -46,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements LinkAdapter.Liste
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_local_media) {
                 startActivity(new Intent(MainActivity.this, LocalMediaActivity.class));
+                return true;
+            } else if (item.getItemId() == R.id.action_social_download) {
+                startActivity(new Intent(MainActivity.this, SocialDownloadActivity.class));
                 return true;
             } else if (item.getItemId() == R.id.action_downloads) {
                 startActivity(new Intent(MainActivity.this, DownloadsActivity.class));
@@ -63,10 +70,30 @@ public class MainActivity extends AppCompatActivity implements LinkAdapter.Liste
             return false;
         });
 
-        View cardLocalMedia = findViewById(R.id.card_local_media);
-        if (cardLocalMedia != null) {
-            cardLocalMedia.setOnClickListener(v -> {
-                startActivity(new Intent(MainActivity.this, LocalMediaActivity.class));
+        bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_home);
+            bottomNav.setOnItemSelectedListener(item -> {
+                int itemId = item.getItemId();
+                if (itemId == R.id.nav_home) {
+                    if (recycler != null && recycler.getAdapter() != null && recycler.getAdapter().getItemCount() > 0) {
+                        recycler.smoothScrollToPosition(0);
+                    }
+                    return true;
+                } else if (itemId == R.id.nav_iptv) {
+                    startActivity(new Intent(MainActivity.this, IptvActivity.class));
+                    return true;
+                } else if (itemId == R.id.nav_local_media) {
+                    startActivity(new Intent(MainActivity.this, LocalMediaActivity.class));
+                    return true;
+                } else if (itemId == R.id.nav_downloader) {
+                    startActivity(new Intent(MainActivity.this, SocialDownloadActivity.class));
+                    return true;
+                } else if (itemId == R.id.nav_settings) {
+                    startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                    return true;
+                }
+                return false;
             });
         }
 
@@ -220,6 +247,9 @@ public class MainActivity extends AppCompatActivity implements LinkAdapter.Liste
     @Override
     protected void onResume() {
         super.onResume();
+        if (bottomNav != null) {
+            bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+        }
         refresh();
     }
 }

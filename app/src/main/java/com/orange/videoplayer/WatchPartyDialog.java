@@ -70,6 +70,7 @@ public class WatchPartyDialog {
 
         btnCreateRoom.setOnClickListener(btn -> {
             String roomId = manager.createRoom(streamUrl, title);
+            LocalPartyServer.start(roomId, streamUrl, title);
             refreshUI.run();
             Toast.makeText(context, "تم إنشاء الغرفة: " + roomId, Toast.LENGTH_SHORT).show();
             if (callback != null) callback.onRoomStateChanged(true, true, roomId);
@@ -82,6 +83,7 @@ public class WatchPartyDialog {
                 return;
             }
             manager.joinRoom(code, streamUrl, title);
+            LocalPartyServer.start(manager.getRoomId(), streamUrl, title);
             refreshUI.run();
             Toast.makeText(context, "تم الانضمام للغرفة: " + code, Toast.LENGTH_SHORT).show();
             if (callback != null) callback.onRoomStateChanged(true, false, code);
@@ -116,6 +118,7 @@ public class WatchPartyDialog {
 
         btnLeaveRoom.setOnClickListener(btn -> {
             manager.leaveRoom();
+            LocalPartyServer.stop();
             refreshUI.run();
             Toast.makeText(context, "تمت مغادرة الغرفة", Toast.LENGTH_SHORT).show();
             if (callback != null) callback.onRoomStateChanged(false, false, null);

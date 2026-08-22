@@ -56,7 +56,27 @@ public class LinkAdapter extends RecyclerView.Adapter<LinkAdapter.VH> {
         long d = e.optLong("dur");
 
         h.title.setText(e.optString("name"));
-        h.url.setText(e.optString("url"));
+        String u = e.optString("url");
+        h.url.setText(u);
+
+        String lower = (e.optString("name") + " " + u).toLowerCase();
+        if (h.badge != null) {
+            if (lower.contains("4k") || lower.contains("2160")) {
+                h.badge.setText("4K");
+                h.badge.setVisibility(View.VISIBLE);
+            } else if (lower.contains("1080") || lower.contains("fhd")) {
+                h.badge.setText("1080p");
+                h.badge.setVisibility(View.VISIBLE);
+            } else if (lower.contains("m3u8") || lower.contains("live")) {
+                h.badge.setText("HLS");
+                h.badge.setVisibility(View.VISIBLE);
+            } else if (lower.contains("mp4")) {
+                h.badge.setText("MP4");
+                h.badge.setVisibility(View.VISIBLE);
+            } else {
+                h.badge.setVisibility(View.GONE);
+            }
+        }
 
         boolean done = d > 0 && p >= d - 1000;
         if (done) {
@@ -92,6 +112,7 @@ public class LinkAdapter extends RecyclerView.Adapter<LinkAdapter.VH> {
         final TextView title;
         final TextView url;
         final TextView time;
+        final TextView badge;
         final ProgressBar progress;
         final MaterialButton restart;
         final ImageButton delete;
@@ -102,6 +123,7 @@ public class LinkAdapter extends RecyclerView.Adapter<LinkAdapter.VH> {
             title = v.findViewById(R.id.tv_title);
             url = v.findViewById(R.id.tv_url);
             time = v.findViewById(R.id.tv_time);
+            badge = v.findViewById(R.id.tv_badge);
             progress = v.findViewById(R.id.pb_pos);
             restart = v.findViewById(R.id.btn_restart);
             delete = v.findViewById(R.id.btn_delete);

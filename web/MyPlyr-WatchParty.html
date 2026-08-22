@@ -2,21 +2,35 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MyPlyr - المشاهدة الجماعية المتزامنة (Watch Party)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MyPlyr - المشاهدة الجماعية المتزامنة (Watch Party PWA)</title>
+    
+    <!-- Favicon & PWA Icons -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍿</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#090D16">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MyPlyr">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/play-button-circled.png">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
     <style>
         :root {
             --bg-dark: #090D16;
-            --card-bg: #141B2D;
-            --accent: #E50914;
-            --accent-glow: rgba(229, 9, 20, 0.4);
-            --text: #FFFFFF;
+            --card-bg: rgba(20, 27, 45, 0.95);
+            --card-glass: rgba(26, 32, 41, 0.85);
+            --accent: #FF6D2E;
+            --accent-glow: rgba(255, 109, 46, 0.4);
+            --text: #E6EDF3;
             --text-dim: #8B949E;
-            --border: #21262D;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #3FB950;
         }
 
         * {
@@ -35,36 +49,45 @@
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
+            user-select: none;
         }
 
         /* Top Header */
         header {
-            background: rgba(20, 27, 45, 0.95);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             padding: 12px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border);
-            z-index: 10;
+            z-index: 20;
         }
 
         .brand-title {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-size: 16px;
             font-weight: 700;
             color: var(--text);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 60%;
+            max-width: 55%;
         }
 
-        .brand-title span {
-            color: var(--accent);
+        .brand-logo {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--accent), #FF8F50);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 2px 8px var(--accent-glow);
         }
 
         .header-actions {
@@ -74,10 +97,10 @@
         }
 
         .room-badge {
-            background: rgba(46, 160, 67, 0.15);
-            color: #3FB950;
-            border: 1px solid rgba(46, 160, 67, 0.4);
-            padding: 4px 12px;
+            background: rgba(63, 185, 80, 0.12);
+            color: var(--success);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            padding: 5px 12px;
             border-radius: 20px;
             font-size: 13px;
             font-weight: 700;
@@ -85,14 +108,19 @@
             align-items: center;
             gap: 6px;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .room-badge:hover {
+            background: rgba(63, 185, 80, 0.2);
         }
 
         .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #3FB950;
-            box-shadow: 0 0 8px #3FB950;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
             animation: pulse 2s infinite;
         }
 
@@ -102,7 +130,7 @@
         }
 
         .btn-header-action {
-            background: var(--card-bg);
+            background: var(--card-glass);
             border: 1px solid var(--border);
             color: var(--text);
             padding: 6px 12px;
@@ -110,6 +138,21 @@
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-header-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-install {
+            background: var(--accent);
+            color: #FFF;
+            border: none;
+            display: none;
         }
 
         /* Player Wrap */
@@ -135,7 +178,8 @@
             top: 14px;
             left: 14px;
             background: rgba(13, 17, 23, 0.85);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border);
             padding: 6px 14px;
             border-radius: 20px;
@@ -145,36 +189,40 @@
             align-items: center;
             gap: 6px;
             pointer-events: none;
-            z-index: 5;
+            z-index: 10;
+            transition: all 0.3s;
         }
 
         /* iOS Safari Tap-to-Play Overlay */
         .tap-play-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(9, 13, 22, 0.85);
-            backdrop-filter: blur(8px);
+            background: rgba(9, 13, 22, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 25;
             cursor: pointer;
+            padding: 20px;
+            text-align: center;
         }
 
         .tap-play-circle {
-            width: 84px;
-            height: 84px;
-            background: var(--accent);
+            width: 88px;
+            height: 88px;
+            background: linear-gradient(135deg, var(--accent), #FF8F50);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
+            font-size: 38px;
             color: #FFF;
-            box-shadow: 0 0 30px var(--accent-glow);
+            box-shadow: 0 0 32px var(--accent-glow);
             animation: pulsePlay 1.8s infinite;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
         @keyframes pulsePlay {
@@ -183,7 +231,7 @@
         }
 
         .tap-play-text {
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 700;
             color: #FFF;
         }
@@ -191,14 +239,15 @@
         .tap-play-sub {
             font-size: 13px;
             color: var(--text-dim);
-            margin-top: 6px;
+            margin-top: 8px;
+            max-width: 320px;
         }
 
         /* Flying Emojis */
         .flying-emoji {
             position: absolute;
             bottom: 70px;
-            font-size: 42px;
+            font-size: 44px;
             animation: flyUp 2.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
             pointer-events: none;
             z-index: 20;
@@ -212,21 +261,22 @@
             100% { opacity: 0; transform: translateY(-340px) scale(1.6); }
         }
 
-        /* Reactions Bar */
+        /* Live Reactions Bar */
         .reactions-container {
-            background: rgba(20, 27, 45, 0.95);
-            backdrop-filter: blur(12px);
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             padding: 10px 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
             border-top: 1px solid var(--border);
-            z-index: 10;
+            z-index: 20;
         }
 
         .emoji-btn {
-            background: var(--card-bg);
+            background: var(--card-glass);
             border: 1px solid var(--border);
             border-radius: 50%;
             width: 46px;
@@ -250,6 +300,7 @@
             inset: 0;
             background: rgba(9, 13, 22, 0.96);
             backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -309,6 +360,7 @@
             font-size: 14px;
             outline: none;
             text-align: center;
+            transition: border-color 0.2s;
         }
 
         .input-box:focus {
@@ -318,19 +370,37 @@
         .btn-submit {
             width: 100%;
             padding: 14px;
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), #FF8F50);
             color: #FFF;
             border: none;
             border-radius: 12px;
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.1s;
             margin-top: 8px;
+            box-shadow: 0 4px 14px var(--accent-glow);
         }
 
-        .btn-submit:hover {
-            opacity: 0.9;
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        /* Keyboard Shortcut Info Box */
+        .shortcut-hint {
+            margin-top: 14px;
+            font-size: 11px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .kbd {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
         }
     </style>
 </head>
@@ -339,9 +409,11 @@
     <!-- Header -->
     <header>
         <div class="brand-title">
-            <span>🍿</span> <div id="videoTitleText">MyPlyr Watch Party</div>
+            <div class="brand-logo">▶</div>
+            <div id="videoTitleText">MyPlyr Watch Party</div>
         </div>
         <div class="header-actions">
+            <button class="btn-header-action btn-install" id="btnInstallPwa" onclick="installPwa()">📲 تثبيت التطبيق</button>
             <div class="room-badge" onclick="openJoinModal()">
                 <div class="status-dot" id="statusDot"></div>
                 <span id="roomCodeText">WP-0000</span>
@@ -358,11 +430,11 @@
 
         <video id="videoPlayer" playsinline webkit-playsinline x5-playsinline preload="auto" controls></video>
 
-        <!-- Tap to Play Overlay for iOS Safari -->
+        <!-- Tap to Play Overlay for iOS Safari & Blocked Autoplay -->
         <div class="tap-play-overlay" id="tapPlayOverlay" onclick="userUnlockAndPlay()">
             <div class="tap-play-circle">▶</div>
             <div class="tap-play-text">انقر لبدء المشاهدة والمزامنة</div>
-            <div class="tap-play-sub">اضغط في أي مكان لتشغيل الفيديو فوراً على الآيفون</div>
+            <div class="tap-play-sub">اضغط في أي مكان لتشغيل الفيديو والصوت فوراً على الآيفون والمتصفح</div>
         </div>
     </div>
 
@@ -381,7 +453,7 @@
         <div class="join-card">
             <div class="join-icon">🍿</div>
             <h2 class="join-title">المشاهدة الجماعية المتزامنة</h2>
-            <p class="join-desc">أدخل رمز الغرفة ورابط الفيديو للمشاهدة مع الأصدقاء بتزامن فوري وتفاعلات حية</p>
+            <p class="join-desc">أدخل رمز الغرفة ورابط الفيديو للمشاهدة مع الأصدقاء بتزامن فوري ومزامنة ذكية</p>
             
             <div class="input-group">
                 <label class="input-label">رمز الغرفة (Room Code):</label>
@@ -394,16 +466,30 @@
             </div>
 
             <button class="btn-submit" onclick="applySettingsAndPlay()">▶️ بدء المشاهدة المتزامنة</button>
+
+            <div class="shortcut-hint">
+                <span>اختصارات:</span>
+                <span class="kbd">المسافة</span> إيقاف/تشغيل
+                <span class="kbd">F</span> ملء الشاشة
+                <span class="kbd">M</span> كتم
+                <span class="kbd">← →</span> تقديم/تأخير
+            </div>
         </div>
     </div>
 
     <script>
+        // Global variables declared at the very top
+        let hlsInstance = null;
+        let ws = null;
+        let deferredPrompt = null;
+
         // Parse Query Params
         const params = new URLSearchParams(window.location.search);
         let room = (params.get('room') || localStorage.getItem('last_room') || '').trim();
         let videoSrc = (params.get('src') || localStorage.getItem('last_src') || '').trim();
         let videoTitle = params.get('title') || 'مشاهدة متزامنة';
 
+        // DOM elements
         const video = document.getElementById('videoPlayer');
         const playerWrap = document.getElementById('playerWrap');
         const roomCodeText = document.getElementById('roomCodeText');
@@ -414,11 +500,23 @@
         const tapPlayOverlay = document.getElementById('tapPlayOverlay');
         const inputRoom = document.getElementById('inputRoom');
         const inputUrl = document.getElementById('inputUrl');
+        const btnInstallPwa = document.getElementById('btnInstallPwa');
 
-        if (!room || !videoSrc) {
-            openJoinModal();
-        } else {
-            prepareParty(room, videoSrc, videoTitle);
+        // PWA Installation Hook
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (btnInstallPwa) btnInstallPwa.style.display = 'flex';
+        });
+
+        function installPwa() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    deferredPrompt = null;
+                    if (btnInstallPwa) btnInstallPwa.style.display = 'none';
+                });
+            }
         }
 
         function openJoinModal() {
@@ -445,38 +543,47 @@
             prepareParty(room, videoSrc, 'مشاهدة متزامنة');
         }
 
-        let hlsInstance = null;
-        let ws = null;
+        function getEffectivePlayableUrl(rawUrl) {
+            if (!rawUrl) return '';
+            if (window.location.protocol === 'https:' && rawUrl.startsWith('http://')) {
+                return 'https://videoshare-one.vercel.app/api/proxy?url=' + encodeURIComponent(rawUrl);
+            }
+            return rawUrl;
+        }
 
         function prepareParty(r, src, title) {
-            roomCodeText.innerText = r;
-            videoTitleText.innerText = decodeURIComponent(title);
+            if (!r || !src) return;
 
-            // Clean previous instance
+            roomCodeText.innerText = r;
+            try {
+                videoTitleText.innerText = decodeURIComponent(title);
+            } catch(e) {
+                videoTitleText.innerText = title;
+            }
+
             if (hlsInstance) {
-                hlsInstance.destroy();
+                try {
+                    hlsInstance.destroy();
+                } catch(e) {}
                 hlsInstance = null;
             }
 
-            // iOS Safari Native HLS check vs Hls.js
+            const finalSrc = getEffectivePlayableUrl(src);
+
+            // iOS Safari Native HLS Engine vs HLS.js vs Standard HTML5
             if (src.includes('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
-                // iOS Native HLS Engine (Hardware Accelerated on iPhone)
-                video.src = src;
-            } else if (Hls.isSupported() && (src.includes('.m3u8') || src.includes('ts'))) {
+                video.src = finalSrc;
+            } else if (typeof Hls !== 'undefined' && Hls.isSupported() && (src.includes('.m3u8') || src.includes('.ts'))) {
                 hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
-                hlsInstance.loadSource(src);
+                hlsInstance.loadSource(finalSrc);
                 hlsInstance.attachMedia(video);
             } else {
-                // Standard MP4 stream (iOS Safari & Chrome Native)
-                video.src = src;
+                video.src = finalSrc;
             }
 
             video.load();
-
-            // Connect Realtime WebSocket
             connectWebSocket(r);
 
-            // Try auto-play; if iOS Safari blocks it, show the tap overlay
             const playPromise = video.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
@@ -498,6 +605,7 @@
             tapPlayOverlay.style.display = 'none';
         });
 
+        // Advanced WebSocket & Smooth Synchronization
         function connectWebSocket(r) {
             if (ws) {
                 try { ws.close(); } catch(e){}
@@ -513,7 +621,7 @@
                 ws.onopen = () => {
                     syncText.innerText = 'متصل ومتزامن مع المضيف ✓';
                     statusDot.style.background = '#3FB950';
-                    publish(topic, { action: 'join', sender: 'Safari (iOS)' });
+                    publish(topic, { action: 'join', sender: 'Safari / PWA', sentAt: Date.now() });
                 };
 
                 ws.onmessage = (event) => {
@@ -528,7 +636,7 @@
 
                 ws.onclose = () => {
                     syncText.innerText = 'جاري إعادة الاتصال...';
-                    statusDot.style.background = '#E50914';
+                    statusDot.style.background = '#FF6D2E';
                     setTimeout(() => connectWebSocket(room), 2000);
                 };
 
@@ -541,6 +649,7 @@
         }
 
         function publish(topic, data) {
+            data.sentAt = Date.now();
             fetch('https://ntfy.sh/' + topic, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain; charset=utf-8' },
@@ -548,19 +657,42 @@
             }).catch(() => {});
         }
 
+        // Smooth rate-based synchronization with Latency Compensation
         function handleSocketMessage(data) {
             if (data.action === 'sync') {
-                const targetPosSec = (data.pos || 0) / 1000.0;
+                const now = Date.now();
+                const sentAt = data.sentAt || now;
+                const latencySec = Math.max(0, (now - sentAt) / 1000.0);
                 const isPlaying = (data.state === 'PLAYING');
 
-                if (Math.abs(video.currentTime - targetPosSec) > 1.5) {
-                    video.currentTime = targetPosSec;
-                }
+                // Compensate position for transit time if host was actively playing
+                const targetPosSec = ((data.pos || 0) / 1000.0) + (isPlaying ? latencySec : 0);
+                const currentPosSec = video.currentTime;
+                const diff = targetPosSec - currentPosSec;
 
+                // Sync Play/Pause state
                 if (isPlaying && video.paused) {
                     video.play().catch(() => {});
                 } else if (!isPlaying && !video.paused) {
                     video.pause();
+                }
+
+                if (isPlaying) {
+                    if (Math.abs(diff) > 2.0) {
+                        video.currentTime = targetPosSec;
+                        video.playbackRate = 1.0;
+                    } else if (diff > 0.25) {
+                        video.playbackRate = 1.08;
+                    } else if (diff < -0.25) {
+                        video.playbackRate = 0.92;
+                    } else {
+                        video.playbackRate = 1.0;
+                    }
+                } else {
+                    if (Math.abs(diff) > 0.5) {
+                        video.currentTime = targetPosSec;
+                    }
+                    video.playbackRate = 1.0;
                 }
 
             } else if (data.action === 'emoji') {
@@ -574,7 +706,7 @@
                 publish('myplyr-party-' + room.toLowerCase(), {
                     action: 'emoji',
                     emoji: emoji,
-                    sender: 'Safari'
+                    sender: 'Web Client'
                 });
             }
         }
@@ -586,6 +718,75 @@
             el.style.left = (15 + Math.random() * 70) + '%';
             playerWrap.appendChild(el);
             setTimeout(() => el.remove(), 2400);
+        }
+
+        // Full Keyboard Shortcuts Support
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch (e.key) {
+                case ' ':
+                case 'k':
+                case 'K':
+                    e.preventDefault();
+                    if (video.paused) video.play().catch(() => {});
+                    else video.pause();
+                    break;
+                case 'ArrowRight':
+                case 'l':
+                case 'L':
+                    e.preventDefault();
+                    video.currentTime = Math.min(video.duration || 99999, video.currentTime + 10);
+                    break;
+                case 'ArrowLeft':
+                case 'j':
+                case 'J':
+                    e.preventDefault();
+                    video.currentTime = Math.max(0, video.currentTime - 10);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    video.volume = Math.min(1.0, video.volume + 0.1);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    video.volume = Math.max(0.0, video.volume - 0.1);
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'm':
+                case 'M':
+                    e.preventDefault();
+                    video.muted = !video.muted;
+                    break;
+            }
+
+            if (e.key >= '0' && e.key <= '9' && video.duration) {
+                e.preventDefault();
+                const ratio = parseInt(e.key) / 10;
+                video.currentTime = video.duration * ratio;
+            }
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (playerWrap.requestFullscreen) playerWrap.requestFullscreen();
+                else if (playerWrap.webkitRequestFullscreen) playerWrap.webkitRequestFullscreen();
+                else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            }
+        }
+
+        // Initial launch
+        if (!room || !videoSrc) {
+            openJoinModal();
+        } else {
+            prepareParty(room, videoSrc, videoTitle);
         }
     </script>
 </body>

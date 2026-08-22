@@ -143,6 +143,25 @@ public class DownloadStore {
         saveAll(list);
     }
 
+    public synchronized void setMeta(long downloadId, String key, String value) {
+        List<JSONObject> list = getAll();
+        for (JSONObject o : list) {
+            if (o.optLong("downloadId") == downloadId) {
+                try {
+                    if (value == null) {
+                        o.remove(key);
+                    } else {
+                        o.put(key, value);
+                    }
+                    o.put("updatedTs", System.currentTimeMillis());
+                } catch (JSONException ignored) {
+                }
+                break;
+            }
+        }
+        saveAll(list);
+    }
+
     public synchronized void delete(long downloadId) {
         List<JSONObject> list = getAll();
         for (int i = 0; i < list.size(); i++) {

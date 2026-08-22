@@ -1,8 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Default Modern Dark Theme -->
     <style name="Theme.MyPlyr" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
-        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondary">@color/accent_light</item>
+        <item name="colorSurface">@color/card</item>
+        <item name="colorOnSurface">@color/text</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:textColorPrimary">@color/text</item>
+    </style>
+
+    <!-- AMOLED Pure Black Theme -->
+    <style name="Theme.MyPlyr.Amoled" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorSecondary">@color/accent_light</item>
+        <item name="colorSurface">@color/amoled_card</item>
+        <item name="colorOnSurface">@color/text</item>
+        <item name="android:statusBarColor">@color/amoled_bg</item>
+        <item name="android:navigationBarColor">@color/amoled_bg</item>
+        <item name="android:windowBackground">@color/amoled_bg</item>
+        <item name="android:textColorPrimary">@color/text</item>
+    </style>
+
+    <!-- Ocean Blue Theme -->
+    <style name="Theme.MyPlyr.Ocean" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/theme_ocean</item>
+        <item name="colorSecondary">@color/theme_ocean</item>
+        <item name="colorSurface">@color/card</item>
+        <item name="colorOnSurface">@color/text</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:textColorPrimary">@color/text</item>
+    </style>
+
+    <!-- Cyberpunk Theme -->
+    <style name="Theme.MyPlyr.Cyberpunk" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/theme_cyberpunk</item>
+        <item name="colorSecondary">@color/theme_cyberpunk</item>
         <item name="colorSurface">@color/card</item>
         <item name="colorOnSurface">@color/text</item>
         <item name="android:statusBarColor">@color/bg</item>

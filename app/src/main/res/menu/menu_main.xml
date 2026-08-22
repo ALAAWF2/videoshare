@@ -8,6 +8,12 @@
         app:iconTint="@color/accent"
         app:showAsAction="always" />
     <item
+        android:id="@+id/action_social_download"
+        android:icon="@drawable/ic_download"
+        android:title="@string/social_download_title"
+        app:iconTint="@color/accent"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_downloads"
         android:icon="@drawable/ic_download"
         android:title="@string/downloads"

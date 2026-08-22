@@ -281,6 +281,82 @@
     <string name="watch_party_syncing">جاري مزامنة التشغيل...</string>
     <string name="watch_party_joined">انضم صديق جديد للغرفة 🎉</string>
     <string name="watch_party_chat_hint">اكتب رسالة سريعة...</string>
+
+    <!-- Social Media Downloader (Pass 8) -->
+    <string name="social_download_title">تحميل سوشيال</string>
+    <string name="social_download_desc">تنزيل الفيديوهات من انستغرام، تيك توك، X، فيسبوك وغيرها</string>
+    <string name="social_url_hint">الصق رابط الفيديو (انستغرام، تيك توك، X، فيسبوك...)</string>
+    <string name="social_btn_resolve">تحليل الرابط</string>
+    <string name="social_download_video">تحميل الفيديو</string>
+    <string name="social_download_audio">تحميل الصوت فقط</string>
+    <string name="social_view_downloads">عرض التحميلات</string>
+    <string name="social_paste">لصق</string>
+    <string name="social_clear">مسح</string>
+    <string name="social_resolving">جاري تحليل الرابط واستخراج الفيديو...</string>
+    <string name="social_platform_instagram">انستغرام</string>
+    <string name="social_platform_tiktok">تيك توك</string>
+    <string name="social_platform_x">X</string>
+    <string name="social_platform_facebook">فيسبوك</string>
+    <string name="social_platform_generic">موقع آخر</string>
+    <string name="social_error_youtube">يوتيوب غير مدعوم حالياً — جرب موقع آخر</string>
+    <string name="social_error_instagram_image">هذا المنشور صورة وليس فيديو</string>
+    <string name="social_error_x_no_video">هذا التغريدة بدون فيديو</string>
+    <string name="social_error_fb_no_video">تعذر العثور على الفيديو</string>
+    <string name="social_error_generic_no_video">ما لقينا رابط فيديو بهالصفحة — جرب رابط تاني</string>
+    <string name="social_error_invalid_url">الرابط غير صالح، يرجى إدخال رابط صحيح</string>
+    <string name="social_error_network">تعذر الاتصال بالخادم، تأكد من اتصال الإنترنت</string>
+    <string name="social_download_started">بدأ التحميل ✓</string>
+    <string name="social_card_header">تحميل مباشر على جهازك</string>
+    <string name="social_supported_hint">انستغرام • تيك توك • X • فيسبوك ومواقع أخرى</string>
+    <string name="social_quality_choose">اختيار الجودة</string>
+    <string name="social_quality_title">اختر الجودة</string>
+    <string name="social_quality_audio_only">صوت فقط</string>
+    <string name="social_video_no_audio_hint">هذه الجودة بدون صوت — حمّل الصوت منفصل إذا بدك</string>
+    <string name="social_youtube_invalid">رابط يوتيوب غير صالح</string>
+    <string name="download_status_downloading_video">جاري تحميل الفيديو...</string>
+    <string name="download_status_downloading_audio">جاري تحميل الصوت...</string>
+    <string name="download_status_merging">جاري دمج الصوت مع الفيديو...</string>
+    <string name="download_status_merge_failed">فشل دمج الصوت مع الفيديو</string>
+    <string name="settings_section_account">الحساب</string>
+    <string name="settings_account_title">حساب جوجل (يوتيوب)</string>
+    <string name="settings_account_summary_in">مسجل الدخول ✓ — تحميل بكل الجودات</string>
+    <string name="settings_account_summary_out">غير مسجل — سجّل الدخول لفتح كل الجودات</string>
+    <string name="login_title">تسجيل الدخول ليوتيوب</string>
+    <string name="login_waiting_hint">سجّل دخولك بحساب جوجل — سيتم الالتقاط تلقائياً عند الوصول ليوتيوب</string>
+    <string name="login_success">تم تسجيل الدخول ✓ — كل الجودات مفتوحة الآن</string>
+    <string name="logout_confirm">هل تبت تسجيل الخروج من حساب يوتيوب؟</string>
+    <string name="logout_done">تم تسجيل الخروج</string>
+    <string name="download_status_fallback_360">تعذر التحميل بالجودة المختارة — التحويل إلى 360p المضمون...</string>
+    <string name="settings_cobalt_title">محرك التحميل (yt-dlp)</string>
+    <string name="settings_cobalt_summary">فحص وتثبيت آخر تحديث للمحرك من GitHub لضمان دعم كافة المواقع</string>
+    <string name="settings_cobalt_hint">https://my-cobalt.example.com</string>
+    <string name="settings_cobalt_disabled">معطّل</string>
+    <string name="settings_ytdlp_title">محرك التحميل (yt-dlp)</string>
+    <string name="settings_ytdlp_summary">فحص وتثبيت آخر تحديث للمحرك من GitHub لضمان دعم كافة المواقع</string>
+    <string name="settings_ytdlp_updating">جاري فحص وتحديث المحرك...</string>
+    <string name="settings_ytdlp_updated">تم تحديث محرك التحميل بنجاح ✓</string>
+    <string name="settings_ytdlp_up_to_date">المحرك محدث لآخر إصدار ✓</string>
+    <string name="settings_ytdlp_error">فشل تحديث المحرك: %1$s</string>
+    <!-- Bottom Navigation Tabs -->
+    <string name="tab_home">الرئيسية</string>
+    <string name="tab_iptv">IPTV</string>
+    <string name="tab_local_media">المكتبة</string>
+    <string name="tab_downloader">التحميل</string>
+    <string name="tab_settings">الإعدادات</string>
+
+    <!-- Themes Settings -->
+    <string name="settings_section_appearance">المظهر والثيم</string>
+    <string name="settings_theme_title">مظهر التطبيق (Theme)</string>
+    <string name="settings_theme_summary">اختيار الثيم والوضع الداكن</string>
+    <string name="theme_default">الداكن العصري (افتراضي)</string>
+    <string name="theme_amoled">سواد فائق (AMOLED Black)</string>
+    <string name="theme_ocean">المحيط الأزرق (Ocean Blue)</string>
+    <string name="theme_cyberpunk">سايبربانك (Cyberpunk Neon)</string>
+
+    <!-- Download Notifications -->
+    <string name="download_channel_name">التحميلات</string>
+    <string name="download_channel_desc">إشعارات تقدم وتحميل الفيديوهات</string>
+    <string name="download_completed">اكتمل التحميل بنجاح ✓</string>
 </resources>
 
 

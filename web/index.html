@@ -662,7 +662,7 @@
 
             // On HTTPS pages, route HTTP streams through serverless proxy with headers
             if (window.location.protocol === 'https:' && u.startsWith('http://')) {
-                return '/api/proxy?url=' + encodeURIComponent(u);
+                return '/api/proxy?url=' + encodeURIComponent(u) + '&referer=' + encodeURIComponent(u);
             }
             return u;
         }
@@ -827,9 +827,11 @@
             if (data.action === 'sync') {
                 const now = Date.now();
                 const sentAt = data.sentAt || now;
-                const latencySec = Math.max(0, (now - sentAt) / 1000.0);
                 const isPlaying = (data.state === 'PLAYING');
-
+                // ntfy relays host->ntfy and ntfy->guest; clock skew between devices makes
+                // Date.now() comparison unreliable. Use a small fixed estimate instead of a
+                // possibly-huge negative/positive skew value, then let the rate-trim below converge.
+                const latencySec = Math.min(Math.max((now - sentAt) / 1000.0, 0), 2.0);
                 // Compensate position for transit time if host was actively playing
                 const targetPosSec = ((data.pos || 0) / 1000.0) + (isPlaying ? latencySec : 0);
                 const currentPosSec = video.currentTime;

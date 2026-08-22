@@ -22,6 +22,9 @@ public class WatchPartyWebPlayer {
 
     public static String getShareableWebUrl(String roomId, String videoUrl, String videoTitle) {
         if (roomId == null) roomId = "WP-1001";
+        if (videoUrl != null && videoUrl.contains(".mkv")) {
+            videoUrl = videoUrl.replaceFirst("(?i)\\.mkv(\\?|$)", ".mp4$1");
+        }
         String encodedUrl = "";
         String encodedTitle = "";
         try {

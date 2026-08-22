@@ -31,6 +31,7 @@
             --text-dim: #8B949E;
             --border: rgba(255, 255, 255, 0.1);
             --success: #3FB950;
+            --error: #F85149;
         }
 
         * {
@@ -243,6 +244,84 @@
             max-width: 320px;
         }
 
+        /* Error / Diagnostic Overlay */
+        .error-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(9, 13, 22, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 28;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .error-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            border-radius: 18px;
+            padding: 24px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+        }
+
+        .error-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .error-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--error);
+            margin-bottom: 8px;
+        }
+
+        .error-desc {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .error-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-error-action {
+            background: var(--card-glass);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-error-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-error-primary {
+            background: linear-gradient(135deg, var(--accent), #FF8F50);
+            color: #FFF;
+            border: none;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
         /* Flying Emojis */
         .flying-emoji {
             position: absolute;
@@ -436,6 +515,21 @@
             <div class="tap-play-text">انقر لبدء المشاهدة والمزامنة</div>
             <div class="tap-play-sub">اضغط في أي مكان لتشغيل الفيديو والصوت فوراً على الآيفون والمتصفح</div>
         </div>
+
+        <!-- Diagnostic / Error Overlay -->
+        <div class="error-overlay" id="errorOverlay">
+            <div class="error-card">
+                <div class="error-icon">⚠️</div>
+                <h3 class="error-title">تعذر تشغيل هذا الرابط مباشرة</h3>
+                <p class="error-desc" id="errorDescText">المتصفح لا يدعم هذا التنسيق مباشرة (مثل MKV) أو يحتاج خيار التحويل.</p>
+                <div class="error-actions">
+                    <button class="btn-error-action btn-error-primary" onclick="trySwitchToMp4()">🔄 تجربة التحويل إلى MP4 تلقائياً</button>
+                    <button class="btn-error-action" onclick="toggleDirectStream()">⚡ تجربة الرابط المباشر بدون بروكسي</button>
+                    <button class="btn-error-action" onclick="openInVlc()">🍿 فتح في تطبيق VLC على الآيفون</button>
+                    <button class="btn-error-action" onclick="copyStreamLink()">📋 نسخ الرابط المباشر</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Live Reaction Bar -->
@@ -482,6 +576,8 @@
         let hlsInstance = null;
         let ws = null;
         let deferredPrompt = null;
+        let currentRawSrc = '';
+        let isDirectMode = false;
 
         // Parse Query Params
         const params = new URLSearchParams(window.location.search);
@@ -498,6 +594,8 @@
         const statusDot = document.getElementById('statusDot');
         const joinOverlay = document.getElementById('joinOverlay');
         const tapPlayOverlay = document.getElementById('tapPlayOverlay');
+        const errorOverlay = document.getElementById('errorOverlay');
+        const errorDescText = document.getElementById('errorDescText');
         const inputRoom = document.getElementById('inputRoom');
         const inputUrl = document.getElementById('inputUrl');
         const btnInstallPwa = document.getElementById('btnInstallPwa');
@@ -543,16 +641,36 @@
             prepareParty(room, videoSrc, 'مشاهدة متزامنة');
         }
 
+        // Automatic conversion of MKV containers to MP4 for HTML5 browsers (Safari/Chrome)
+        function normalizeForBrowser(rawUrl) {
+            if (!rawUrl) return '';
+            let u = rawUrl;
+            if (u.includes('.mkv')) {
+                u = u.replace(/\.mkv(\?|$)/i, '.mp4$1');
+            }
+            return u;
+        }
+
         function getEffectivePlayableUrl(rawUrl) {
             if (!rawUrl) return '';
-            if (window.location.protocol === 'https:' && rawUrl.startsWith('http://')) {
-                return 'https://videoshare-one.vercel.app/api/proxy?url=' + encodeURIComponent(rawUrl);
+            let u = normalizeForBrowser(rawUrl);
+
+            // If user explicitly chose direct mode or page is HTTP
+            if (isDirectMode || window.location.protocol === 'http:') {
+                return u;
             }
-            return rawUrl;
+
+            // On HTTPS pages, route HTTP streams through serverless proxy with headers
+            if (window.location.protocol === 'https:' && u.startsWith('http://')) {
+                return '/api/proxy?url=' + encodeURIComponent(u);
+            }
+            return u;
         }
 
         function prepareParty(r, src, title) {
             if (!r || !src) return;
+            currentRawSrc = src;
+            errorOverlay.style.display = 'none';
 
             roomCodeText.innerText = r;
             try {
@@ -603,7 +721,54 @@
 
         video.addEventListener('play', () => {
             tapPlayOverlay.style.display = 'none';
+            errorOverlay.style.display = 'none';
         });
+
+        // Error detection & recovery
+        video.addEventListener('error', () => {
+            const err = video.error;
+            let detail = 'تعذر تشغيل هذا التنسيق في المتصفح.';
+            if (err && err.code === 4) {
+                detail = 'صيغة الفيديو الحالية (مثل MKV أو الترميز الصوتي غير المدعوم) لا تعمل مباشرة في متصفح Safari. اضغط على زر التحويل إلى MP4 أو افتح الرابط في VLC.';
+            } else if (err && err.code === 2) {
+                detail = 'حدث انقطاع في الشبكة أو انتهت صلاحية توكن السيرفر.';
+            }
+            errorDescText.innerText = detail;
+            errorOverlay.style.display = 'flex';
+            tapPlayOverlay.style.display = 'none';
+        });
+
+        function trySwitchToMp4() {
+            if (currentRawSrc.includes('.mkv')) {
+                videoSrc = currentRawSrc.replace(/\.mkv(\?|$)/i, '.mp4$1');
+            } else {
+                videoSrc = currentRawSrc;
+            }
+            prepareParty(room, videoSrc, videoTitle);
+        }
+
+        function toggleDirectStream() {
+            isDirectMode = !isDirectMode;
+            prepareParty(room, videoSrc, videoTitle);
+        }
+
+        function openInVlc() {
+            const cleanUrl = currentRawSrc.startsWith('http') ? currentRawSrc : 'http://' + currentRawSrc;
+            // VLC for iOS URL scheme
+            const vlcUrl = 'vlc-x-callback://x-callback-url/stream?url=' + encodeURIComponent(cleanUrl);
+            window.location.href = vlcUrl;
+            setTimeout(() => {
+                window.location.href = 'vlc://' + cleanUrl;
+            }, 500);
+        }
+
+        function copyStreamLink() {
+            navigator.clipboard.writeText(currentRawSrc).then(() => {
+                alert('تم نسخ الرابط المباشر إلى الحافظة بنجاح ✓');
+            }).catch(() => {
+                prompt('انسخ الرابط التالي:', currentRawSrc);
+            });
+        }
 
         // Advanced WebSocket & Smooth Synchronization
         function connectWebSocket(r) {

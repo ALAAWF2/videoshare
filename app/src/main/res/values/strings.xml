@@ -357,6 +357,7 @@
     <string name="download_channel_name">التحميلات</string>
     <string name="download_channel_desc">إشعارات تقدم وتحميل الفيديوهات</string>
     <string name="download_completed">اكتمل التحميل بنجاح ✓</string>
+    <string name="ok">حسنًا</string>
 </resources>
 
 

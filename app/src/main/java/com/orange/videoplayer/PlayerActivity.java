@@ -376,6 +376,10 @@ public class PlayerActivity extends AppCompatActivity {
                 .getInt(KEY_QUALITY_MODE, QUALITY_AUTO);
         updateQualityLabel();
         btnQuality.setOnClickListener(v -> showQualityDialog());
+        btnQuality.setOnLongClickListener(v -> {
+            showVideoInfoDialog();
+            return true;
+        });
 
         btnPlayPause.setOnClickListener(v -> togglePlayPause());
 
@@ -1180,6 +1184,55 @@ public class PlayerActivity extends AppCompatActivity {
         if (qualityMode == QUALITY_AUTO) btnQuality.setText("AUTO");
         else if (qualityMode == QUALITY_MAX) btnQuality.setText("MAX");
         else btnQuality.setText(qualityMode + "p");
+    }
+
+    // Live stats overlay: actual resolution/bitrate/codec currently playing (long-press quality button)
+    private void showVideoInfoDialog() {
+        resetAutoHideControls();
+        if (player == null) return;
+        StringBuilder sb = new StringBuilder();
+        androidx.media3.common.VideoSize vs = player.getVideoSize();
+        sb.append("الدقة الحالية: ").append(vs.width).append("×").append(vs.height);
+        if (vs.height > 0) sb.append("  (").append(vs.height).append("p)");
+        sb.append("\n\n");
+        String codec = "—";
+        int bitrate = -1;
+        String fps = "—";
+        androidx.media3.common.Tracks tracks = player.getCurrentTracks();
+        for (androidx.media3.common.Tracks.Group g : tracks.getGroups()) {
+            if (g.getType() != C.TRACK_TYPE_VIDEO) continue;
+            for (int i = 0; i < g.length; i++) {
+                if (g.isTrackSelected(i)) {
+                    androidx.media3.common.Format f = g.getTrackFormat(i);
+                    codec = f.sampleMimeType != null ? f.sampleMimeType.replace("video/", "") : "—";
+                    if (f.codecs != null && !f.codecs.isEmpty()) codec += "\n(" + f.codecs + ")";
+                    bitrate = f.averageBitrate > 0 ? f.averageBitrate : f.peakBitrate;
+                    if (f.frameRate > 0) fps = String.format(java.util.Locale.US, "%.2f", f.frameRate);
+                }
+            }
+        }
+        sb.append("الكودك: ").append(codec);
+        sb.append("\nمعدل البت: ").append(bitrate > 0 ? String.format(java.util.Locale.US, "%.1f Mbps", bitrate / 1000000f) : "—");
+        sb.append("\nالإطارات: ").append(fps).append(" fps");
+        // List all available variants so user sees what the source offers
+        java.util.TreeSet<Integer> heights = collectVideoHeights();
+        if (!heights.isEmpty()) {
+            sb.append("\n\nالجودات المتوفرة بالمصدر: ");
+            java.util.Iterator<Integer> it = heights.iterator();
+            boolean first = true;
+            while (it.hasNext()) {
+                if (!first) sb.append(", ");
+                sb.append(it.next()).append("p");
+                first = false;
+            }
+        } else {
+            sb.append("\n(ملف واحد بدون دقات متعددة)");
+        }
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("معلومات الفيديو")
+                .setMessage(sb.toString())
+                .setPositiveButton(R.string.ok, null)
+                .show();
     }
 
     private void showTransientIndicator(TextView view, String text) {

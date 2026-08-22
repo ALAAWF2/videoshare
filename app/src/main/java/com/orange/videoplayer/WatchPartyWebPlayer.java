@@ -222,11 +222,20 @@ public class WatchPartyWebPlayer {
                 "            if (DEBUG) console.log('[WatchParty]', ...args);\n" +
                 "        }\n" +
                 "        \n" +
+                "        function wrapUrl(u) {\n" +
+                "            if (!u || typeof u !== 'string') return u;\n" +
+                "            if (u.indexOf('http://') === 0) {\n" +
+                "                return 'https://videoshare-one.vercel.app/api/proxy?url=' + encodeURIComponent(u) + '&referer=' + encodeURIComponent(u);\n" +
+                "            }\n" +
+                "            return u;\n" +
+                "        }\n" +
+                "        \n" +
                 "        function setVideoSource(url) {\n" +
                 "            if (!url || url === currentVideoSrc) return;\n" +
                 "            currentVideoSrc = url;\n" +
                 "            log('Setting video source:', url);\n" +
-                "            \n" +
+                "            // Route insecure http streams through the HTTPS proxy (iOS Safari blocks plain http)\n" +
+                "            const effectiveUrl = wrapUrl(url);\n" +
                 "            const isHls = url.includes('.m3u8') || url.includes('.m3u') || url.includes('type=m3u8');\n" +
                 "            const isSafariNativeHls = video.canPlayType('application/vnd.apple.mpegurl') || video.canPlayType('application/x-mpegURL');\n" +
                 "            \n" +
@@ -238,7 +247,7 @@ public class WatchPartyWebPlayer {
                 "            if (isHls && !isSafariNativeHls && typeof Hls !== 'undefined' && Hls.isSupported()) {\n" +
                 "                log('Initializing hls.js for stream');\n" +
                 "                hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, maxBufferLength: 30 });\n" +
-                "                hlsInstance.loadSource(url);\n" +
+                "                hlsInstance.loadSource(effectiveUrl);\n" +
                 "                hlsInstance.attachMedia(video);\n" +
                 "                hlsInstance.on(Hls.Events.ERROR, function(event, data) {\n" +
                 "                    if (data.fatal) {\n" +
@@ -257,7 +266,7 @@ public class WatchPartyWebPlayer {
                 "                });\n" +
                 "            } else {\n" +
                 "                log('Using native HTML5 / Safari HLS video source');\n" +
-                "                video.src = url;\n" +
+                "                video.src = effectiveUrl;\n" +
                 "            }\n" +
                 "            video.load();\n" +
                 "        }\n" +

@@ -42,7 +42,11 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.TrackSelectionOverride;
+import androidx.media3.common.C;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
 import androidx.media3.ui.PlayerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -132,6 +136,14 @@ public class PlayerActivity extends AppCompatActivity {
     private boolean hostStateIsPlaying = false;
     private long lastResyncRequestTime = 0L;
     private long bufferingStartTime = 0L;
+
+    // Quality selection state (v6.1)
+    private DefaultTrackSelector trackSelector;
+    private MaterialButton btnQuality;
+    private static final int QUALITY_AUTO = -1;
+    private static final int QUALITY_MAX = -2;
+    private int qualityMode = QUALITY_AUTO;
+    private static final String KEY_QUALITY_MODE = "quality_mode";
 
     private final Handler saveHandler = new Handler(Looper.getMainLooper());
     private final Runnable saveTask = new Runnable() {
@@ -358,6 +370,12 @@ public class PlayerActivity extends AppCompatActivity {
 
         btnSpeed.setText(SettingsStore.formatSpeed(currentPlaybackSpeed));
         btnSpeed.setOnClickListener(v -> cycleSpeed());
+
+        btnQuality = findViewById(R.id.btn_quality);
+        qualityMode = getSharedPreferences("myplyr_settings", Context.MODE_PRIVATE)
+                .getInt(KEY_QUALITY_MODE, QUALITY_AUTO);
+        updateQualityLabel();
+        btnQuality.setOnClickListener(v -> showQualityDialog());
 
         btnPlayPause.setOnClickListener(v -> togglePlayPause());
 
@@ -912,7 +930,13 @@ public class PlayerActivity extends AppCompatActivity {
     private void initPlayer(String url, long seekPos) {
         directRetryAttempted = false;
         PlayerView playerView = findViewById(R.id.player_view);
+        trackSelector = new DefaultTrackSelector(this);
+        // Like VLC: no bandwidth cap — never let the network estimator downgrade quality
+        trackSelector.setParameters(trackSelector.buildUponParameters()
+                .setMaxVideoBitrate(Integer.MAX_VALUE)
+                .setExceedVideoConstraintsIfNecessary(true));
         player = new ExoPlayer.Builder(this)
+                .setTrackSelector(trackSelector)
                 .setSeekBackIncrementMs(10000)
                 .setSeekForwardIncrementMs(10000)
                 .build();
@@ -964,6 +988,10 @@ public class PlayerActivity extends AppCompatActivity {
                     bufferingStartTime = 0L;
                     if (layoutErrorPanel != null) layoutErrorPanel.setVisibility(View.GONE);
                     updateProgress();
+                    // Apply saved quality preference once tracks are known
+                    if (qualityMode != QUALITY_AUTO) {
+                        applyQualityMode(qualityMode);
+                    }
                 }
                 updatePipActions();
             }
@@ -1054,6 +1082,104 @@ public class PlayerActivity extends AppCompatActivity {
 
         resetAutoHideControls();
         updatePipActions();
+    }
+
+    // ===== Quality control (v6.1) =====
+    private void applyQualityMode(int mode) {
+        if (player == null || trackSelector == null) return;
+        // Remove any bandwidth-based cap so network estimate never downgrades us
+        trackSelector.setParameters(trackSelector.buildUponParameters()
+                .setMaxVideoBitrate(Integer.MAX_VALUE)
+                .setExceedVideoConstraintsIfNecessary(true));
+        if (mode == QUALITY_AUTO) {
+            clearPinnedVideo();
+            return;
+        }
+        java.util.TreeSet<Integer> heights = collectVideoHeights();
+        if (heights.isEmpty()) return;
+        int targetH = (mode == QUALITY_MAX) ? heights.last() : mode;
+        Integer chosen = heights.ceiling(targetH);
+        if (chosen == null) chosen = heights.floor(targetH);
+        if (chosen != null) pinVideoHeight(chosen);
+    }
+
+    private java.util.TreeSet<Integer> collectVideoHeights() {
+        java.util.TreeSet<Integer> set = new java.util.TreeSet<>();
+        androidx.media3.common.Tracks tracks = player.getCurrentTracks();
+        for (androidx.media3.common.Tracks.Group g : tracks.getGroups()) {
+            if (g.getType() != C.TRACK_TYPE_VIDEO) continue;
+            for (int i = 0; i < g.length; i++) {
+                if (g.isTrackSupported(i)) {
+                    int h = g.getTrackFormat(i).height;
+                    if (h > 0) set.add(h);
+                }
+            }
+        }
+        return set;
+    }
+
+    private void pinVideoHeight(int h) {
+        androidx.media3.common.Tracks tracks = player.getCurrentTracks();
+        for (androidx.media3.common.Tracks.Group g : tracks.getGroups()) {
+            if (g.getType() != C.TRACK_TYPE_VIDEO) continue;
+            for (int i = 0; i < g.length; i++) {
+                if (g.isTrackSupported(i) && g.getTrackFormat(i).height == h) {
+                    player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+                            .clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+                            .addOverride(new TrackSelectionOverride(g.getMediaTrackGroup(), i))
+                            .build());
+                    return;
+                }
+            }
+        }
+    }
+
+    private void clearPinnedVideo() {
+        if (player == null) return;
+        player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+                .clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+                .build());
+    }
+
+    private void showQualityDialog() {
+        resetAutoHideControls();
+        if (player == null) return;
+        java.util.TreeSet<Integer> hSet = collectVideoHeights();
+        final java.util.List<Integer> heights = new java.util.ArrayList<>(hSet);
+        java.util.Collections.sort(heights, java.util.Collections.reverseOrder());
+        if (heights.isEmpty()) {
+            Toast.makeText(this, "لا توجد دقات متعددة لهذا البث", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        CharSequence[] items = new CharSequence[heights.size() + 2];
+        items[0] = "تلقائي";
+        items[1] = "أعلى جودة (" + heights.get(0) + "p)";
+        for (int i = 0; i < heights.size(); i++) {
+            items[i + 2] = heights.get(i) + "p";
+        }
+        int checked = qualityMode == QUALITY_AUTO ? 0 : (qualityMode == QUALITY_MAX ? 1 : -1);
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("الجودة")
+                .setSingleChoiceItems(items, checked, (d, which) -> {
+                    if (which == 0) qualityMode = QUALITY_AUTO;
+                    else if (which == 1) qualityMode = QUALITY_MAX;
+                    else qualityMode = heights.get(which - 2);
+                    getSharedPreferences("myplyr_settings", Context.MODE_PRIVATE)
+                            .edit().putInt(KEY_QUALITY_MODE, qualityMode).apply();
+                    updateQualityLabel();
+                    applyQualityMode(qualityMode);
+                    d.dismiss();
+                    Toast.makeText(this, "الجودة: " + items[which], Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void updateQualityLabel() {
+        if (btnQuality == null) return;
+        if (qualityMode == QUALITY_AUTO) btnQuality.setText("AUTO");
+        else if (qualityMode == QUALITY_MAX) btnQuality.setText("MAX");
+        else btnQuality.setText(qualityMode + "p");
     }
 
     private void showTransientIndicator(TextView view, String text) {
